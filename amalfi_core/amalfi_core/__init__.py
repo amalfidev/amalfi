@@ -1,5 +1,3 @@
-def pi() -> float:
-    return 3.14
+from .pipeline import Pipeline, pipeline
 
-
-__all__ = ["pi"]
+__all__ = ["pipeline", "Pipeline"]

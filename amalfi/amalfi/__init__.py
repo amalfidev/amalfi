@@ -1,3 +1,3 @@
-from amalfi_core import pi
+from amalfi_core import Pipeline, pipeline
 
-__all__ = ["pi"]
+__all__ = ["pipeline", "Pipeline"]
