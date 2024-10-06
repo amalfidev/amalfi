@@ -3,7 +3,7 @@
 Amalfi is an open-source library for working with functional programming in modern Python, with a focus on simplicity, type safety, and asynchronous programming. It is designed to make functional programming accessible and easy to use, while leveraging the power of modern Python, including async/await, coroutines, and concurrency, always keeping ergonomy in mind.
 
 
-## Development and Contribution Guide
+# Development and Contribution Guide
 
 This monorepo contains the source code for the Amalfi project, including the `amalfi` and `amalfi_core` packages, as well as example usage.
 
