@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "amalfi_core"
+version = "0.1.0"
+description = "Core functionality for the Amalfi project"
+authors = ["Carlo Casorzo <carlo@deepblu.dev>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

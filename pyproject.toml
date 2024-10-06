@@ -1,0 +1,99 @@
+[tool.poetry]
+name = "amalfi-monorepo"
+version = "0.1.0"
+description = "Monorepo for Amalfi projects"
+authors = ["Carlo Casorzo <carlo@deepblu.dev>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/amalfidev/amalfi"
+repository = "https://github.com/amalfidev/amalfi"
+keywords = ["functional programming", "python"]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+amalfi = { path = "amalfi", develop = true }
+amalfi_core = { path = "amalfi_core", develop = true }
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.6.9"
+pre-commit = "^4.0.0"
+pyright = "^1.1.383"
+pytest = "^7.4.3"
+
+[tool.ruff]
+# General Ruff settings
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+# Enable pycodestyle ('E'), pyflakes ('F'), and isort ('I') rules
+select = ["E", "F", "I"]
+ignore = []
+
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = [
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "I",
+  "N",
+  "Q",
+  "S",
+  "T",
+  "W",
+  "ANN",
+  "ARG",
+  "BLE",
+  "COM",
+  "DJ",
+  "DTZ",
+  "EM",
+  "ERA",
+  "EXE",
+  "FBT",
+  "ICN",
+  "INP",
+  "ISC",
+  "NPY",
+  "PD",
+  "PGH",
+  "PIE",
+  "PL",
+  "PT",
+  "PTH",
+  "PYI",
+  "RET",
+  "RSE",
+  "RUF",
+  "SIM",
+  "SLF",
+  "TCH",
+  "TID",
+  "TRY",
+  "UP",
+  "YTT",
+]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.mccabe]
+# Unlike Flake8, default to a complexity level of 10.
+max-complexity = 10
+
+[tool.ruff.lint.isort]
+known-first-party = ["amalfi", "amalfi_core"]
+
+# You can keep your existing exclude list here
+[tool.ruff.lint.per-file-ignores]
+# Example: Ignore specific rules for specific files
+# "__init__.py" = ["E402"]

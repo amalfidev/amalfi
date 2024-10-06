@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "amalfi_examples"
+version = "0.1.0"
+description = "Examples and tests for the Amalfi project"
+authors = ["Carlo Casorzo <carlo@deepblu.dev>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+amalfi = { path = "../amalfi", develop = true }
+pytest = "^7.4.2"
+pytest-cov = "^4.1.0"
+pytest-mypy = "^0.10.3"
+pytest-watch = "^4.2.0"
+pytest-mock = "^3.14.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

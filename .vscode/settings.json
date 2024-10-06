@@ -1,0 +1,23 @@
+{
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.ruff": "explicit",
+    "source.organizeImports.ruff": "explicit"
+  },
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
+  "ruff.lint.run": "onSave",
+  "ruff.organizeImports": false,
+  "ruff.fixAll": true,
+  "python.analysis.typeCheckingMode": "strict",
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.indexing": true,
+  "python.analysis.autoSearchPaths": true,
+  "python.analysis.extraPaths": [
+    "./amalfi",
+    "./amalfi_core",
+    "./examples"
+  ],
+  "python.languageServer": "Pylance"
+}
