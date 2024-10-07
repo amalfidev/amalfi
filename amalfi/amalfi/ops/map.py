@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, Callable, Coroutine, Iterable
 
 
@@ -20,6 +21,7 @@ def amap[I, O](
 ) -> Callable[[Iterable[I]], Coroutine[Any, Any, Iterable[O]]]:
     """
     Apply an async function to each element of an iterable.
+    Analogous to `asyncio.gather` but for pipelines.
 
     **Args:**
     - `fn`: A callable that takes an input of type `I` and returns
@@ -27,10 +29,10 @@ def amap[I, O](
 
     **Returns:**
     - A callable that takes an iterable of type `Iterable[I]` and returns
-    an async iterable of type `Awaitable[Iterable[O]]`.
+    an Iterable[O] in a coroutine.
     """
 
     async def async_map(iterable: Iterable[I]) -> Iterable[O]:
-        return [await fn(item) for item in iterable]
+        return await asyncio.gather(*fmap(fn)(iterable))
 
     return async_map

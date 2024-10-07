@@ -6,7 +6,7 @@ from amalfi.pipeline import AsyncPipeline, Pipeline
 from .stub import multiply_by_two, wait_and_emphasize
 
 
-class TestOps:
+class TestMap:
     def test_fmap(self):
         mapped = fmap(multiply_by_two)([1, 2, 3])
         assert list(mapped) == [2, 4, 6]
@@ -16,7 +16,7 @@ class TestOps:
         assert pipeline.run() == 12
 
     @pytest.mark.anyio
-    async def test_fmap_in_async_pipeline(self):
+    async def test_amap(self):
         result = await (
             AsyncPipeline.pipe(["Alice", "Bob", "Charlie"])
             | amap(wait_and_emphasize)  # ["ALICE!", "BOB!", "CHARLIE!"] (async)
