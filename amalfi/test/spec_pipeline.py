@@ -1,44 +1,23 @@
-import asyncio
-
 import pytest
 
 from amalfi.pipeline import AsyncPipeline, Pipeline
 
-
-def add_one(x: int) -> int:
-    return x + 1
-
-
-def multiply_by_two(x: int) -> int:
-    return x * 2
-
-
-def uppercase(s: str) -> str:
-    return s.upper()
-
-
-def greet(name: str) -> str:
-    return f"Hello, {name}"
-
-
-async def emphasize(s: str) -> str:
-    await asyncio.sleep(0.1)
-    return s.upper() + "!"
+from .stub import add_one, greet, multiply_by_two, uppercase, wait_and_emphasize
 
 
 class TestPipeline:
     def test_pipe(self):
         result = (
             Pipeline.pipe(1)
-            .chain(add_one)  # 2
-            .chain(multiply_by_two)  # 4
-            .chain(add_one)  # 5
-            .chain(str)  # "5"
+            .step(add_one)  # 2
+            .step(multiply_by_two)  # 4
+            .step(lambda x: x + 1)  # 5
+            .step(str)  # "5"
             | uppercase  # "5"
             | len  # 1
             | add_one  # 2
             | str  # "2"
-        )()
+        ).run()
 
         assert result == "2"
 
@@ -56,12 +35,12 @@ class TestAsyncPipeline:
     async def test_pipe(self):
         pipeline = (
             AsyncPipeline.pipe("Alice")
-            .chain(greet)  # "Hello, Alice"
-            .chain(emphasize)  # "HELLO, ALICE!" (0.1s) async
-            .chain(len)  # 13
+            .step(greet)  # "Hello, Alice"
+            .step(wait_and_emphasize)  # "HELLO, ALICE!" (0.1s) async
+            .step(len)  # 13
             | add_one  # 14
             | str  # "14"
-            | emphasize  # "14!" (0.1s) async
+            | wait_and_emphasize  # "14!" (0.1s) async
             | len  # 3
         )
         assert pipeline.input == "Alice"
@@ -69,31 +48,31 @@ class TestAsyncPipeline:
 
         result = await (
             AsyncPipeline.pipe("Alice")
-            .chain(greet)
-            .chain(emphasize)  # async
-            .chain(len)
+            .step(greet)
+            .step(wait_and_emphasize)  # async
+            .step(len)
             | add_one
             | str
-            | emphasize  # async
+            | wait_and_emphasize  # async
             | len
-        )()
+        ).run()
         assert result == 3
 
         result = await (
             Pipeline.pipe_async("Alice")
             | greet
-            | emphasize  # async
+            | wait_and_emphasize  # async
             | len
             | add_one
             | str
-            | emphasize  # async
+            | wait_and_emphasize  # async
             | len
-        )()
+        ).run()
         assert result == 3
 
     @pytest.mark.anyio
     async def test_change_input(self):
-        pipeline = AsyncPipeline.pipe("Alice") | greet | emphasize
+        pipeline = AsyncPipeline.pipe("Alice") | greet | wait_and_emphasize
         pipeline.input = "Bob"
 
         assert pipeline.input == "Bob"

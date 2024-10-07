@@ -97,11 +97,20 @@ class Pipeline[I, O]:
         **Returns:**
         - The result of processing the input through the pipeline functions.
         """
+        return self.run()
+
+    def run(self) -> O:
+        """
+        Execute the pipeline on the stored input.
+
+        **Returns:**
+        - The result of processing the input through the pipeline functions.
+        """
         return self.fn(self.input)
 
-    def chain[U](self, fn: Callable[[O], U]) -> Pipeline[I, U]:
+    def step[U](self, fn: Callable[[O], U]) -> Pipeline[I, U]:
         """
-        Chain another function to the pipeline.
+        Adds a function as a step to the pipeline.
 
         This method creates a new `Pipeline` instance that composes the current pipeline
         function with the provided function `fn`.
@@ -122,11 +131,11 @@ class Pipeline[I, O]:
 
     def __or__[U](self, fn: Callable[[O], U]) -> Pipeline[I, U]:
         """
-        Chain another function to the pipeline using the `|` operator.
-        Alias for `#chain` method.
+        Adds a function as a step to the pipeline using the `|` operator.
+        Alias for `#step` method.
         """
 
-        return self.chain(fn)
+        return self.step(fn)
 
     def with_input(self, value: I) -> Pipeline[I, O]:
         self.input = value
@@ -226,13 +235,22 @@ class AsyncPipeline[I, O]:
         **Returns:**
         - The result of processing the input through the pipeline functions.
         """
+        return await self.run()
+
+    async def run(self):
+        """
+        Execute the pipeline on the stored input.
+
+        **Returns:**
+        - The result of processing the input through the pipeline functions.
+        """
         return await self.fn(self.input)
 
-    def chain[U](
+    def step[U](
         self, fn: Callable[[O], U | Coroutine[Any, Any, U]]
     ) -> AsyncPipeline[I, U]:
         """
-        Chain another function to the pipeline.
+        Adds a function as a step to the pipeline.
 
         This method creates a new `AsyncPipeline` instance that composes the
         current pipeline function with the provided function `fn`, that can be
@@ -256,11 +274,11 @@ class AsyncPipeline[I, O]:
         self, fn: Callable[[O], U | Coroutine[Any, Any, U]]
     ) -> AsyncPipeline[I, U]:
         """
-        Chain another sync or async function to the pipeline using the `|` operator.
-        Alias for `#chain` method.
+        Adds a function as a step to the pipeline using the `|` operator.
+        Alias for `#step` method.
         """
 
-        return self.chain(fn)
+        return self.step(fn)
 
     def with_input(self, value: I) -> AsyncPipeline[I, O]:
         self.input = value

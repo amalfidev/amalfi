@@ -5,6 +5,16 @@ from typing import Any, Callable, Coroutine, cast
 
 
 def identity[T](value: T) -> T:
+    """
+    Identity function.
+
+    Examples:
+
+    ```python
+    result = identity(42)
+    print(result) # 42
+    ```
+    """
     return value
 
 
