@@ -12,7 +12,6 @@ keywords = ["functional programming", "python"]
 [tool.poetry.dependencies]
 python = "^3.12"
 amalfi = { path = "amalfi", develop = true }
-amalfi_core = { path = "amalfi_core", develop = true }
 
 [build-system]
 requires = ["poetry-core"]
@@ -92,7 +91,7 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 max-complexity = 10
 
 [tool.ruff.lint.isort]
-known-first-party = ["amalfi", "amalfi_core"]
+known-first-party = ["amalfi", "examples"]
 
 # You can keep your existing exclude list here
 [tool.ruff.lint.per-file-ignores]

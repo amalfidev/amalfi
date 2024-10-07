@@ -1,22 +1,57 @@
 # Amalfi: Simple functional programming in modern Python
 
-Amalfi is an open-source library for working with functional programming in modern Python, with a focus on simplicity, type safety, and asynchronous programming. It is designed to make functional programming accessible and easy to use, while leveraging the power of modern Python, including async/await, coroutines, and concurrency, always keeping ergonomy in mind.
+Amalfi is an open-source library for working with functional programming in modern Python, with a focus on simplicity, type safety, and asynchronous programming.
 
+It is designed to make functional programming accessible and easy to use, while leveraging the power of modern Python. It considers type hints and async/await to be first class citizens, always keeping ergonomy in mind.
 
-# Development and Contribution Guide
+## Installation
 
-This monorepo contains the source code for the Amalfi project, including the `amalfi` and `amalfi_core` packages, as well as example usage.
+```bash
+# using pip
+pip install amalfi
+# using poetry
+poetry install amalfi
+```
 
-## Development Environment
+## Quickstart
+
+```python
+from amalfi import Pipeline
+
+def add_one(x: int) -> int:
+    return x + 1
+
+def multiply_by_two(x: int) -> int:
+    return x * 2
+
+pipeline = Pipeline.pipe(3) | add_one | multiply_by_two
+result = pipeline()
+print(result) # Output: 8
+```
+
+```python
+from amalfi import as_async
+
+@as_async
+def add_one(x: int) -> int:
+    return x + 1
+
+```
+
+## Development and Contribution Guide
+
+This monorepo contains the source code for the Amalfi project, including the `amalfi` and subpackages packages, as well as example usage.
+
+### Development Environment
 
 This project uses Poetry for dependency management and includes a `Makefile` with common commands.
 
-### Prerequisites
+#### Prerequisites
 
 - Python 3.12 or higher
 - Poetry
 
-### Setting Up the Environment
+#### Setting Up the Environment
 
 1. **Install Dependencies**
 
@@ -38,19 +73,15 @@ This project uses Poetry for dependency management and includes a `Makefile` wit
    - Ruff for linting and formatting
    - Pyright for type checking
 
-## Available Commands
+### Available Commands
 
 You can use the `Makefile` to perform common tasks in the project.
-
-### Installation
 
 - **Install Project Dependencies**
 
   ```bash
   make install
   ```
-
-### Linting and Formatting
 
 - **Run Linter (Ruff)**
 
@@ -64,15 +95,11 @@ You can use the `Makefile` to perform common tasks in the project.
   make format
   ```
 
-### Type Checking
-
 - **Run Type Checker (Pyright)**
 
   ```bash
   make typecheck
   ```
-
-### Testing
 
 - **Run All Tests**
 
@@ -88,17 +115,14 @@ You can use the `Makefile` to perform common tasks in the project.
 
   ```bash
   make test pkg=amalfi
-  make test pkg=amalfi_core
   make test pkg=examples
   ```
 
   Available package options are:
 
   - `amalfi`
-  - `amalfi_core`
   - `examples`
 
-### Cleaning Build Artifacts
 
 - **Clean Build Artifacts**
 
@@ -108,41 +132,37 @@ You can use the `Makefile` to perform common tasks in the project.
 
   This command removes build artifacts like `__pycache__`, `.pytest_cache`, and compiled Python files.
 
-### Run All Checks
-
 - **Run Lint, Format, Type Check, and Tests**
 
   ```bash
-  make all
+  make ci
   ```
 
 ### Publishing to PyPI
+In order to publish to PyPI, you need to have the necessary credentials. You can set them up by running `poetry config pypi-token.pypi <your_token>`.
 
-- **Build and Publish Amalfi to PyPI**
+You can get your PyPI token by going to your [PyPI account settings](https://pypi.org/manage/account/).
 
-  ```bash
-  make publish
-  ```
+Once you have your token, you can run the following command to publish the package to PyPI:
 
-  Steps to publish:
+```bash
+make publish
+```
+
+#### Steps to publish:
 
   1. Navigate to the `amalfi` directory: `cd amalfi`
   2. Update the version number in `amalfi/pyproject.toml`
   3. Ensure you have the necessary credentials for PyPI
   4. Run the publish command: `make publish`
 
-## Project Structure
+### Project Structure
 
 ```
 amalfi/
 ├── amalfi/                # 'amalfi' package source code
 │   ├── __init__.py
 │   └── ...
-├── amalfi_core/           # 'amalfi_core' package source code
-│   ├── amalfi_core/
-│   │   ├── __init__.py
-│   │   └── ...
-│   └── pyproject.toml     # pyproject.toml for 'amalfi_core'
 ├── examples/              # Example usage and tests
 │   └── ...
 ├── pyproject.toml         # Root pyproject.toml
@@ -150,7 +170,7 @@ amalfi/
 └── README.md              # This README file
 ```
 
-## Testing Importantly
+### Testing Considerations
 
 If you encounter import errors when running tests, ensure:
 
@@ -163,7 +183,7 @@ If you encounter import errors when running tests, ensure:
 Contributions are welcome! Please ensure that you:
 
 - Write tests for any new functionality.
-- Run `make all` to ensure code quality checks pass.
+- Run `make ci` to ensure code quality checks pass.
 
 ## License
 

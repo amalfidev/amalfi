@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from amalfi_core.pipeline import AsyncPipeline, Pipeline
+from amalfi.pipeline import AsyncPipeline, Pipeline
 
 
 def add_one(x: int) -> int:

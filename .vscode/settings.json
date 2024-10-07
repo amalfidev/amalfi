@@ -16,7 +16,6 @@
   "python.analysis.autoSearchPaths": true,
   "python.analysis.extraPaths": [
     "./amalfi",
-    "./amalfi_core",
     "./examples"
   ],
   "python.languageServer": "Pylance"

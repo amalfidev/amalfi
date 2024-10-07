@@ -135,7 +135,6 @@ pyrightconfig.json
 
 # Project specific
 amalfi/dist/
-amalfi_core/dist/
 examples/dist/
 
 # Logs
