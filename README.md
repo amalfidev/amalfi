@@ -26,10 +26,10 @@ async def wait_and_multiply_by_two(x: int) -> int:
     return x * 2
 
 pipeline = AsyncPipeline.pipe(3) | add_one | wait_and_multiply_by_two
-result = await pipeline()
+result = await pipeline() # or await pipeline.run()
 print(result) # Output: 8 (after 0.2s)
 
-result = await pipeline.with_input(10)
+result = await pipeline.with_input(10).run()
 print(result) # Output: 22 (after 0.2s)
 ```
 
@@ -47,15 +47,15 @@ print(result) # Output: 22 (after 0.2s)
 
 ### Operators
 #### Mapping
-- `fmap`: Apply a function over an iterable, possibly asynchronously.
-- `amap`: Async version of `fmap`.
+- `map_`: Apply a function over an iterable, possibly asynchronously.
+- `amap`: Async version of `map_`. Analogous to `asyncio.gather` but for pipelines.
 ```python
-from amalfi.ops import amap, fmap
+from amalfi.ops import amap, map_
 
 def add_one(x: int) -> int:
     return x + 1
 
-result = Pipeline.pipe([1, 2, 3]) | fmap(add_one) | sum
+result = Pipeline.pipe([1, 2, 3]) | map_(add_one) | sum
 print(result) # 9
 
 async def wait_and_multiply_by_two(x: int) -> int:
@@ -67,11 +67,10 @@ print(result) # Output: 12 (after 0.1s)
 ```
 
 ##### TODO:
-- **map / async_map**: Apply a function over an iterable, possibly asynchronously.
-- **filter / async_filter**: Filter items in an iterable based on a predicate.
-- **reduce / async_reduce**: Reduce an iterable to a single value using a binary function.
-- **apply**: Apply a function to an argument list.
+- **filter_ / afilter**: Filter items in an iterable based on a predicate.
+- **reduce_ / areduce**: Reduce an iterable to a single value using a binary function.
 - **fork**: Split the data flow to multiple functions.
+- **apply**: Apply a function to an argument list.
 - **chain**: Compose multiple functions together.
 - **compose**: Create a new function by composing multiple functions from right to left.
 - **partial**: Partially apply a function by fixing some arguments.

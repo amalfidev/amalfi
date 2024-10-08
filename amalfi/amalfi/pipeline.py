@@ -13,15 +13,15 @@ class Pipeline[I, O]:
     function. The steps are composed together, enabling a fluent interface
     for processing data through a series of transformations.
 
-    **Type Parameters:**
+    Type Parameters:
     - `I`: The input type of the pipeline.
     - `O`: The output type after processing through the pipeline.
 
-    **Attributes:**
+    Attributes:
     - `input`: The initial input value for the pipeline.
     - `fn`: A callable representing the chained functions of the pipeline.
 
-    **Examples:**
+    Examples:
 
     Basic usage with integer transformations:
 
@@ -79,33 +79,16 @@ class Pipeline[I, O]:
     fn: Callable[[I], O]
 
     def __init__(self, input: I, fn: Callable[[I], O]):
-        """
-        Initialize the `Pipeline` with an input value and a function.
-
-        **Args:**
-        - `input`: The initial input value for the pipeline.
-        - `fn`: A callable that takes an input of type `I` and returns
-        an output of type `O`.
-        """
+        """Initialize the `Pipeline` with an input value and a function."""
         self.input = input
         self.fn = fn
 
     def __call__(self) -> O:
-        """
-        Execute the pipeline on the stored input.
-
-        **Returns:**
-        - The result of processing the input through the pipeline functions.
-        """
+        """Execute the pipeline on the stored input."""
         return self.run()
 
     def run(self) -> O:
-        """
-        Execute the pipeline on the stored input.
-
-        **Returns:**
-        - The result of processing the input through the pipeline functions.
-        """
+        """Execute the pipeline on the stored input."""
         return self.fn(self.input)
 
     def step[U](self, fn: Callable[[O], U]) -> Pipeline[I, U]:
@@ -114,14 +97,6 @@ class Pipeline[I, O]:
 
         This method creates a new `Pipeline` instance that composes the current pipeline
         function with the provided function `fn`.
-
-        **Args:**
-        - `fn`: A callable that takes an input of type `O` and returns
-        an output of type `U`. Defaults to the identity function.
-
-        **Returns:**
-        - A new `Pipeline` instance that represents the composition of the
-        current pipeline and the provided function.
         """
 
         def composed_fn(value: I) -> U:
@@ -138,35 +113,37 @@ class Pipeline[I, O]:
         return self.step(fn)
 
     def with_input(self, value: I) -> Pipeline[I, O]:
+        """Change the input value of the pipeline."""
         self.input = value
         return self
 
+    def concat[U](self, other: Pipeline[O, U]) -> Pipeline[I, U]:
+        """
+        Concatenate two pipelines. The output of the current pipeline is passed
+        as input to the other pipeline, regardless of the input value of the
+        other pipeline.
+        """
+
+        def concat_fn(value: I) -> U:
+            return other.fn(self.fn(value))
+
+        return Pipeline(self.input, concat_fn)
+
+    def __add__[U](self, other: Pipeline[O, U]) -> Pipeline[I, U]:
+        """
+        Concatenate two pipelines using the `+` operator.
+        Alias for `#concat` method.
+        """
+        return self.concat(other)
+
     @classmethod
     def pipe[T](cls, input: T) -> Pipeline[T, T]:
-        """
-        Create a new AsyncPipeline instance with the given input.
-
-        **Args:**
-        - `input`: The initial input value for the pipeline.
-
-        **Returns:**
-        - A new `AsyncPipeline` instance initialized with the given input.
-        """
-
+        """Create a new AsyncPipeline instance with the given input."""
         return Pipeline[T, T](input, identity)
 
     @classmethod
     def pipe_async[T](cls, input: T) -> AsyncPipeline[T, T]:
-        """
-        Create a new AsyncPipeline instance with the given input.
-
-        **Args:**
-        - `input`: The initial input value for the pipeline.
-
-        **Returns:**
-        - A new `AsyncPipeline` instance initialized with the given input.
-        """
-
+        """Create a new AsyncPipeline instance with the given input."""
         return AsyncPipeline.pipe(input)
 
 
@@ -180,15 +157,15 @@ class AsyncPipeline[I, O]:
     enabling a fluent interface for processing data through a series of
     transformations.
 
-    **Type Parameters:**
+    Type Parameters:
     - `I`: The input type of the pipeline.
     - `O`: The output type after processing through the pipeline.
 
-    **Attributes:**
+    Attributes:
     - `input`: The initial input value for the pipeline.
     - `fn`: An async callable representing the chained functions of the pipeline.
 
-    **Examples:**
+    Examples:
 
     Basic usage with mixed sync and async functions:
 
@@ -219,31 +196,16 @@ class AsyncPipeline[I, O]:
         Initialize the `AsyncPipeline` with an input value and a function.
         If the function is not async, it will be wrapped in an async wrapper in
         order to be able to chain it with other async functions.
-
-        **Args:**
-        - `input`: The initial input value for the pipeline.
-        - `fn`: A callable that takes an input of type `I` and returns
-        an output of type `O` or an Coroutine[Any, Any, O].
         """
         self.input = input
         self.fn = as_async(fn)
 
     async def __call__(self) -> O:
-        """
-        Execute the pipeline on the stored input.
-
-        **Returns:**
-        - The result of processing the input through the pipeline functions.
-        """
+        """Execute the pipeline on the stored input."""
         return await self.run()
 
     async def run(self):
-        """
-        Execute the pipeline on the stored input.
-
-        **Returns:**
-        - The result of processing the input through the pipeline functions.
-        """
+        """Execute the pipeline on the stored input."""
         return await self.fn(self.input)
 
     def step[U](
@@ -255,14 +217,6 @@ class AsyncPipeline[I, O]:
         This method creates a new `AsyncPipeline` instance that composes the
         current pipeline function with the provided function `fn`, that can be
         either sync or async.
-
-        **Args:**
-        - `fn`: A callable that takes an input of type `O` and returns
-        an output of type `U`. Defaults to the identity function.
-
-        **Returns:**
-        - A new `AsyncPipeline` instance that represents the composition of the
-        current pipeline and the provided function.
         """
 
         async def composed_fn(value: I) -> U:
@@ -277,23 +231,42 @@ class AsyncPipeline[I, O]:
         Adds a function as a step to the pipeline using the `|` operator.
         Alias for `#step` method.
         """
-
         return self.step(fn)
 
     def with_input(self, value: I) -> AsyncPipeline[I, O]:
+        """Change the input value of the pipeline."""
         self.input = value
         return self
 
+    def concat[U](self, other: AsyncPipeline[O, U]) -> AsyncPipeline[I, U]:
+        """
+        Concatenate two pipelines. The output of the current pipeline is passed
+        as input to the other pipeline, regardless of the input value of the
+        other pipeline.
+        """
+
+        async def concat_fn(value: I) -> U:
+            return await other.fn(await self.fn(value))
+
+        return AsyncPipeline(self.input, concat_fn)
+
+    def __add__[U](self, other: AsyncPipeline[O, U]) -> AsyncPipeline[I, U]:
+        """
+        Concatenate two pipelines using the `+` operator.
+        Alias for `#concat` method.
+        """
+        return self.concat(other)
+
     @classmethod
     def pipe[T](cls, input: T) -> AsyncPipeline[T, T]:
-        """
-        Create a new AsyncPipeline instance with the given input.
-
-        **Args:**
-        - `input`: The initial input value for the pipeline.
-
-        **Returns:**
-        - A new `AsyncPipeline` instance initialized with the given input.
-        """
-
+        """Create a new AsyncPipeline instance with the given input."""
         return AsyncPipeline[T, T](input, identity)
+
+    @classmethod
+    def from_sync[T, U](cls, pipeline: Pipeline[T, U]) -> AsyncPipeline[T, U]:
+        """
+        Convert a synchronous pipeline to an asynchronous one,
+        using the original input value.
+        """
+
+        return AsyncPipeline(pipeline.input, as_async(pipeline.fn))
