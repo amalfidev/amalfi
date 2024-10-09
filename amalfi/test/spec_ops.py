@@ -1,9 +1,12 @@
+from typing import Iterable
+
 import pytest
 
-from amalfi.ops import async_map, map_
+from amalfi.core import Fn
+from amalfi.ops import async_map, filter_, map_
 from amalfi.pipeline import AsyncPipeline, Pipeline
 
-from .stub import multiply_by_two, wait_and_emphasize
+from .stub import is_even, multiply_by_two, wait_and_emphasize
 
 
 class TestMap:
@@ -25,3 +28,22 @@ class TestMap:
         ).run()
 
         assert result == 18
+
+
+class TestFilter:
+    def test_filter_with_lambda(self):
+        filter_odds: Fn[Iterable[int], Iterable[int]] = filter_(lambda x: x % 2 == 0)
+        assert list(filter_odds([1, 2, 3, 4])) == [2, 4]
+
+    def test_filter_with_function(self):
+        filter_odds = filter_(is_even)
+        assert list(filter_odds([1, 2, 3, 4])) == [2, 4]
+
+    def test_filter_in_pipeline(self):
+        pipeline = Pipeline.pipe([1, 2, 3, 4]) | filter_(is_even) | tuple | len
+        assert pipeline.run() == 2
+
+    @pytest.mark.anyio
+    async def test_async_filter(self):
+        pipeline = AsyncPipeline.pipe([1, 2, 3, 4]) | filter_(is_even) | tuple | len
+        assert await pipeline.run() == 2

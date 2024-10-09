@@ -9,6 +9,10 @@ def multiply_by_two(x: int) -> int:
     return x * 2
 
 
+def is_even(x: int) -> bool:
+    return x % 2 == 0
+
+
 async def wait_and_add_one(x: int) -> int:
     await asyncio.sleep(0.1)
     return x + 1

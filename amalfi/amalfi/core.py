@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Callable, Coroutine, cast
+from typing import Any, Callable, Coroutine, Iterable, cast
 
 type Fn[I, O] = Callable[[I], O]
 type AsyncFn[I, O] = Callable[[I], Coroutine[Any, Any, O]]
+type IterFn[I, O] = Fn[Iterable[I], Iterable[O]]
 
 
 def identity[T](value: T) -> T:
