@@ -1,3 +1,4 @@
-from .map import amap, fmap
+from .filter import filter_
+from .map import async_map, map_
 
-__all__ = ["amap", "fmap"]
+__all__ = ["async_map", "map_", "filter_"]

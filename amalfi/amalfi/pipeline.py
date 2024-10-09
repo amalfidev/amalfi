@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Coroutine
-
-from .core import as_async, identity
+from .core import AsyncFn, Fn, as_async, identity
 
 
 class Pipeline[I, O]:
@@ -76,9 +74,9 @@ class Pipeline[I, O]:
     """
 
     input: I
-    fn: Callable[[I], O]
+    fn: Fn[I, O]
 
-    def __init__(self, input: I, fn: Callable[[I], O]):
+    def __init__(self, input: I, fn: Fn[I, O]):
         """Initialize the `Pipeline` with an input value and a function."""
         self.input = input
         self.fn = fn
@@ -91,7 +89,7 @@ class Pipeline[I, O]:
         """Execute the pipeline on the stored input."""
         return self.fn(self.input)
 
-    def step[U](self, fn: Callable[[O], U]) -> Pipeline[I, U]:
+    def step[U](self, fn: Fn[O, U]) -> Pipeline[I, U]:
         """
         Adds a function as a step to the pipeline.
 
@@ -104,7 +102,7 @@ class Pipeline[I, O]:
 
         return Pipeline(self.input, composed_fn)
 
-    def __or__[U](self, fn: Callable[[O], U]) -> Pipeline[I, U]:
+    def __or__[U](self, fn: Fn[O, U]) -> Pipeline[I, U]:
         """
         Adds a function as a step to the pipeline using the `|` operator.
         Alias for `#step` method.
@@ -189,9 +187,9 @@ class AsyncPipeline[I, O]:
     """
 
     value: I
-    fn: Callable[[I], Coroutine[Any, Any, O]]
+    fn: AsyncFn[I, O]
 
-    def __init__(self, input: I, fn: Callable[[I], O | Coroutine[Any, Any, O]]):
+    def __init__(self, input: I, fn: Fn[I, O] | AsyncFn[I, O]):
         """
         Initialize the `AsyncPipeline` with an input value and a function.
         If the function is not async, it will be wrapped in an async wrapper in
@@ -208,9 +206,7 @@ class AsyncPipeline[I, O]:
         """Execute the pipeline on the stored input."""
         return await self.fn(self.input)
 
-    def step[U](
-        self, fn: Callable[[O], U | Coroutine[Any, Any, U]]
-    ) -> AsyncPipeline[I, U]:
+    def step[U](self, fn: Fn[O, U] | AsyncFn[O, U]) -> AsyncPipeline[I, U]:
         """
         Adds a function as a step to the pipeline.
 
@@ -224,9 +220,7 @@ class AsyncPipeline[I, O]:
 
         return AsyncPipeline(self.input, composed_fn)
 
-    def __or__[U](
-        self, fn: Callable[[O], U | Coroutine[Any, Any, U]]
-    ) -> AsyncPipeline[I, U]:
+    def __or__[U](self, fn: Fn[O, U] | AsyncFn[O, U]) -> AsyncPipeline[I, U]:
         """
         Adds a function as a step to the pipeline using the `|` operator.
         Alias for `#step` method.
@@ -260,7 +254,7 @@ class AsyncPipeline[I, O]:
     @classmethod
     def pipe[T](cls, input: T) -> AsyncPipeline[T, T]:
         """Create a new AsyncPipeline instance with the given input."""
-        return AsyncPipeline[T, T](input, identity)
+        return AsyncPipeline[T, T](input, as_async(identity))
 
     @classmethod
     def from_sync[T, U](cls, pipeline: Pipeline[T, U]) -> AsyncPipeline[T, U]:

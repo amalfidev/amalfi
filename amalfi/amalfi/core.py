@@ -3,6 +3,9 @@ from __future__ import annotations
 import inspect
 from typing import Any, Callable, Coroutine, cast
 
+type Fn[I, O] = Callable[[I], O]
+type AsyncFn[I, O] = Callable[[I], Coroutine[Any, Any, O]]
+
 
 def identity[T](value: T) -> T:
     """
@@ -18,9 +21,7 @@ def identity[T](value: T) -> T:
     return value
 
 
-def as_async[I, O](
-    fn: Callable[[I], O | Coroutine[Any, Any, O]],
-) -> Callable[[I], Coroutine[Any, Any, O]]:
+def as_async[I, O](fn: Fn[I, O] | AsyncFn[I, O]) -> AsyncFn[I, O]:
     """
     Convert a sync function to an async function.
     Can be used as a decorator or a function.

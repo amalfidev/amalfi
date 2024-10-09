@@ -1,6 +1,6 @@
 import pytest
 
-from amalfi.ops import amap, map_
+from amalfi.ops import async_map, map_
 from amalfi.pipeline import AsyncPipeline, Pipeline
 
 from .stub import multiply_by_two, wait_and_emphasize
@@ -16,10 +16,10 @@ class TestMap:
         assert pipeline.run() == 12
 
     @pytest.mark.anyio
-    async def test_amap(self):
+    async def test_async_map(self):
         result = await (
             AsyncPipeline.pipe(["Alice", "Bob", "Charlie"])
-            | amap(wait_and_emphasize)  # ["ALICE!", "BOB!", "CHARLIE!"] (async)
+            | async_map(wait_and_emphasize)  # ["ALICE!", "BOB!", "CHARLIE!"] (async)
             | map_(len)  # [6, 4, 8]
             | sum  # 18
         ).run()
