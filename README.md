@@ -1,6 +1,6 @@
-# Amalfi: Simple functional programming in modern Python
+# Amalfi: Simple functional programming for modern Python
 
-Amalfi is an open-source library for working with functional programming in modern Python, with a focus on simplicity, type safety, and asynchronous programming.
+Amalfi is an open-source library for working with functional programming for modern Python, with a strongfocus on type safety, asynchronous programming and ergonomy.
 
 It is designed to make functional programming accessible and easy to use, while leveraging the power of modern Python. It considers type hints and async/await to be first class citizens, always keeping ergonomy in mind.
 
@@ -9,6 +9,7 @@ It is designed to make functional programming accessible and easy to use, while 
 ```bash
 # using pip
 pip install amalfi
+
 # using poetry
 poetry install amalfi
 ```
@@ -16,7 +17,7 @@ poetry install amalfi
 ## Quickstart
 
 ```python
-from amalfi.pipeline import AsyncPipeline
+from amalfi.pipeline import Fn, AsyncPipeline, Pipeline
 
 def add_one(x: int) -> int:
     return x + 1
@@ -25,16 +26,143 @@ async def wait_and_multiply_by_two(x: int) -> int:
     await asyncio.sleep(0.1)
     return x * 2
 
-pipeline = AsyncPipeline.pipe(3) | add_one | wait_and_multiply_by_two
-result = await pipeline() # or await pipeline.run()
-print(result) # Output: 8 (after 0.2s)
+divide_by_two: Fn[int, float] = lambda x: x / 2.0
 
-result = await pipeline.with_input(10).run()
-print(result) # Output: 22 (after 0.2s)
+pipeline = (
+  AsyncPipeline.pipe(3) # asynchronous pipeline that needs to be awaited
+  | add_one 
+  | wait_and_multiply_by_two 
+  | divide_by_two
+)
+
+result = await pipeline.run() # Output: 4 (after 0.2s)
+# or just call it directly
+result = await pipeline()
+
+# change the input
+pipeline = pipeline.with_input(10)
+result = await pipeline() # Output: 11 (after 0.2s)
+
+# or use the step method to use lambdas directly in a type-safe manner
+pipeline = (
+  Pipeline.pipe(3) # synchronous pipeline
+  .step(lambda x: x + 1)
+  .step(lambda x: x * 2)
+  .step(lambda x: x / 2.0)
+)
+
+result = pipeline() # Output: 5.5
+result = pipeline.with_input(10).run() # Output: 11
 ```
 
 ## Usage
 
+### Core Function types
+The following types are useful to annotate functions and methods and are used throughout the library. They aim to be as simple and intuitive as possible, and provide ergonomy when working with type annotated functions.
+
+#### `Fn`: The Function Type
+A type alias for a synchronous function that takes an input of type `I` and returns an output of type `O`. This represents a callable (function or method) that can be invoked with a single argument of type `I` and returns a value of type `O`. 
+
+  **Usage examples**:
+  ```python
+  add_one: Fn[int, int] = lambda x: x + 1
+  # Equivalent to:
+  add_one: Callable[[int], int] = lambda x: x + 1
+  ```
+
+#### `AsyncFn`: The Asynchronous Function Type
+A type alias for an asynchronous function that takes an input of type `I` and returns an output of type `O`. This represents a callable (function or method) that can be invoked with a single argument of type `I` and returns a coroutine that eventually produces a value of type `O`.
+
+  **Usage examples:**
+  ```python
+  async def wait_and_add_one(x: int) -> int:
+      await asyncio.sleep(1)
+      return x + 1
+
+  add_one_async: AsyncFn[int, int] = wait_and_add_one
+  # Equivalent to:
+  add_one_async: Callable[[int], Coroutine[Any, Any, int]] = wait_and_add_one
+
+  # Usage
+  result = await add_one_async(5)  # Output: 6 (after 1 second delay)
+  ```
+
+#### `IterFn`: The Iterable Function Type
+A type alias for a synchronous function that takes an iterable of type `Iterable[I]` and returns an iterable of type `Iterable[O]`. This represents a callable (function or method) that can be invoked with an iterable of type `Iterable[I]` and returns an iterable of type `Iterable[O]`.
+
+  **Usage examples:**
+  ```python
+  add_one_to_each: IterFn[int, int] = lambda xs: (x + 1 for x in xs)
+  # Equivalent to:
+  add_one_to_each: Callable[[Iterable[int]], Iterable[int]] = lambda xs: (x + 1 for x in xs)
+
+  numbers = [1, 2, 3]
+  result = add_one_to_each(numbers)
+  print(list(result))  # Output: [2, 3, 4]
+  ```
+
+#### `AsyncIterFn`: The Asynchronous Iterable Function Type
+A type alias for an asynchronous function that takes an iterable of type `Iterable[I]` and returns an iterable of type `Iterable[O]`. This represents a callable (function or method) that can be invoked with an iterable of type `Iterable[I]` and returns a coroutine that eventually produces an iterable of type `Iterable[O]`.
+
+  **Usage examples:**
+  ```python
+  async def add_one_to_each_async(xs: Iterable[int]) -> Iterable[int]:
+      await asyncio.sleep(1)
+      return (x + 1 for x in xs)
+
+  add_one_to_each_async_fn: AsyncIterFn[int, int] = add_one_to_each_async
+  # Equivalent to:
+  add_one_to_each_async_fn: Callable[[Iterable[int]], Coroutine[Any, Any, Iterable[int]]]
+
+  numbers = [1, 2, 3]
+  result = await add_one_to_each_async_fn(numbers)
+  print(list(result))  # Output: [2, 3, 4] (after 1 second delay)
+  ```
+
+### Utilities
+The following utilities are useful to work with functions and are used throughout the library as well. They can become handy when working with the library in a type-safe manner.
+
+#### `as_async`: Convert a function from sync to async
+Converts a synchronous function to an asynchronous function. If the input function is already asynchronous, it will be returned as is. This can be used as a decorator.
+Useful for working with sync functions in an async context, or for converting sync methods to async.
+
+**Usage examples:**
+  ```python
+  from amalfi import as_async, AsyncFn, Fn
+
+  # Converting a synchronous function to asynchronous
+  def add_one(x: int) -> int:
+      return x + 1
+
+  add_one_async = as_async(add_one)
+
+  result = await add_one_async(1)
+  print(result)  # Output: 2
+
+
+  # Using `as_async` as a decorator
+  @as_async
+  def add_one(x: int) -> int:
+      return x + 1
+
+  result = await add_one(1)
+  print(result)  # Output: 2
+
+
+  # Converting a lambda function to asynchronous
+  add_one_async: AsyncFn[int, int] = as_async(lambda x: x + 1)
+
+  result = await add_one_async(1)
+  print(result)  # Output: 2
+
+
+  # Converting a synchronous lambda function stored in a variable
+  add_one: Fn[int, int] = lambda x: x + 1
+  add_one_async = as_async(add_one)
+
+  result = await add_one_async(1)
+  print(result)  # Output: 2
+  ```
 
 ## Pipelining
 
