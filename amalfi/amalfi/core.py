@@ -4,43 +4,40 @@ import inspect
 from typing import Any, Callable, Coroutine, Iterable, cast
 
 type Fn[I, O] = Callable[[I], O]
+"""
+A type alias for a synchronous function that takes an input of type `I
+and returns an output of type `O`.
+"""
+
 type AsyncFn[I, O] = Callable[[I], Coroutine[Any, Any, O]]
+"""
+A type alias for an asynchronous function that takes an input of type `I`
+and returns an output of type `O`.
+```
+"""
+
 type IterFn[I, O] = Fn[Iterable[I], Iterable[O]]
+"""
+A type alias for a synchronous function that takes an iterable of type `Iterable[I]`
+and returns an iterable of type `Iterable[O]`.
+"""
+
+type AsyncIterFn[I, O] = AsyncFn[Iterable[I], Iterable[O]]
+"""
+A type alias for an asynchronous function that takes an iterable of type `Iterable[I]`
+and returns an iterable of type `Iterable[O]`.
+"""
 
 
 def identity[T](value: T) -> T:
-    """
-    Identity function.
-
-    Examples:
-
-    ```python
-    result = identity(42)
-    print(result) # 42
-    ```
-    """
+    """Identity function. Returns the input value unchanged."""
     return value
 
 
 def as_async[I, O](fn: Fn[I, O] | AsyncFn[I, O]) -> AsyncFn[I, O]:
     """
-    Convert a sync function to an async function.
-    Can be used as a decorator or a function.
-
-    Examples:
-
-    ```python
-    add_one_async = as_async(add_one)
-    result = await add_one_async(1)
-    print(result) # 2
-
-    @as_async
-    def add_one(x: int) -> int:
-        return x + 1
-
-    result = await add_one(1)
-    print(result) # 2
-    ```
+    Convert a sync function to an async function. Can be used as a decorator.
+    If the input function is already async, it will be returned as is.
     """
 
     async def async_fn(x: I) -> O:
