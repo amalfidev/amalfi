@@ -1,7 +1,16 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Callable, Coroutine, Iterable, cast
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    Iterable,
+    Protocol,
+    TypeGuard,
+    cast,
+    runtime_checkable,
+)
 
 type Fn[I, O] = Callable[[I], O]
 """
@@ -27,6 +36,16 @@ type AsyncIterFn[I, O] = AsyncFn[Iterable[I], Iterable[O]]
 A type alias for an asynchronous function that takes an iterable of type `Iterable[I]`
 and returns an iterable of type `Iterable[O]`.
 """
+
+
+@runtime_checkable
+class TypeGuardProtocol[T, S](Protocol):
+    def __call__(self, arg: T) -> TypeGuard[S]: ...
+
+
+@runtime_checkable
+class AsyncTypeGuardProtocol[T, S](Protocol):
+    async def __call__(self, arg: T) -> TypeGuard[S]: ...
 
 
 def identity[T](value: T) -> T:
