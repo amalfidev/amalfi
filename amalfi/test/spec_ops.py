@@ -1,8 +1,7 @@
 import pytest
 
-from amalfi.core import IterFn
-from amalfi.ops import async_map, filter_, map_
-from amalfi.ops.map import try_async_map
+from amalfi.core import IterFn, as_async
+from amalfi.ops import afilter, amap, filter_, map_, try_amap
 from amalfi.pipeline import AsyncPipeline, Pipeline
 
 from .stub import is_even, multiply_by_two, wait_and_emphasize
@@ -21,7 +20,7 @@ class TestMap:
     async def test_async_map(self):
         result = await (
             AsyncPipeline.pipe(["Alice", "Bob", "Charlie"])
-            | async_map(wait_and_emphasize)  # ["ALICE!", "BOB!", "CHARLIE!"] (async)
+            | amap(wait_and_emphasize)  # ["ALICE!", "BOB!", "CHARLIE!"] (async)
             | map_(len)  # [6, 4, 8]
             | sum  # 18
         ).run()
@@ -33,13 +32,13 @@ class TestMap:
         async def test_try_async_map(self):
             result = await (
                 AsyncPipeline.pipe(["Alice", "Bob", "Charlie"])
-                | try_async_map(wait_and_emphasize)
+                | try_amap(wait_and_emphasize)
                 | filter_(lambda x: not isinstance(x, BaseException))
-                | map_(len)
-                | sum
+                | list
+                | len
             ).run()
 
-            assert result == 18
+            assert result == 3
 
         @pytest.mark.anyio
         async def test_try_async_map_with_exception(self):
@@ -50,13 +49,13 @@ class TestMap:
 
             result = await (
                 AsyncPipeline.pipe(["Alice", "Bob", "Charlie"])
-                | try_async_map(raise_exception)  # ["Alice", ValueError, "Charlie"]
+                | try_amap(raise_exception)  # ["Alice", ValueError, "Charlie"]
                 | filter_(lambda x: not isinstance(x, BaseException))
-                | map_(len)  # [5, 7]
                 | list
+                | len
             ).run()
 
-            assert result == [5, 7]
+            assert result == 2
 
 
 class TestFilter:
@@ -73,6 +72,24 @@ class TestFilter:
         assert pipeline.run() == 2
 
     @pytest.mark.anyio
-    async def test_async_filter(self):
+    async def test_filter_async_pipeline(self):
         pipeline = AsyncPipeline.pipe([1, 2, 3, 4]) | filter_(is_even) | tuple | len
         assert await pipeline.run() == 2
+
+    class TestAsyncFilter:
+        @pytest.mark.anyio
+        async def test_async_filter(self):
+            is_even_async = as_async(is_even)
+            filter_odds = afilter(is_even_async)
+            assert list(await filter_odds([1, 2, 3, 4])) == [2, 4]
+
+        @pytest.mark.anyio
+        async def test_async_filter_in_pipeline(self):
+            is_even_async = as_async(is_even)
+            result = await (
+                AsyncPipeline.pipe([1, 2, 3, 4])
+                | afilter(is_even_async)  # [2, 4]
+                | tuple  # (2, 4)
+            ).run()
+
+            assert result == (2, 4)

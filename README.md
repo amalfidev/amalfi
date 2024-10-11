@@ -1,6 +1,6 @@
-# Amalfi: Simple functional programming for modern Python
+# Amalfi: Simple Functional Programming for Modern Python
 
-Amalfi is an open-source library for working with functional programming for modern Python, with a strongfocus on type safety, asynchronous programming and ergonomy.
+Amalfi is an open-source library for working with functional programming for modern Python, with a strong focus on type safety, asynchronous programming and ergonomy.
 
 It is designed to make functional programming accessible and easy to use, while leveraging the power of modern Python. It considers type hints and async/await to be first class citizens, always keeping ergonomy in mind.
 
@@ -187,15 +187,38 @@ result = Pipeline.pipe([1, 2, 3]) | map_(add_one) | sum
 print(result) # 9
 
 async def wait_and_multiply_by_two(x: int) -> int:
-    await asyncio.sleep(0.1)
+    await asyncio.sleep(0.1) # Simulate some async work
     return x * 2
 
 result = AsyncPipeline.pipe([1, 2, 3]) | amap(wait_and_multiply_by_two) | sum
 print(result) # Output: 12 (after 0.1s)
 ```
 
+#### Filtering
+- `afilter`: Async version of `filter_`.
+- `filter_`: Filter items in an iterable based on a predicate.
+
+```python
+from amalfi.ops import afilter, filter_
+
+def is_even(x: int) -> bool:
+    return x % 2 == 0
+
+pipeline = Pipeline.pipe([1, 2, 3, 4]) | filter_(is_even) | sum
+result = pipeline.run() # Output: 6
+
+async def async_is_even(x: int) -> bool:
+    await asyncio.sleep(0.1) # Simulate some async work
+    return x % 2 == 0
+
+result = await (
+  AsyncPipeline.pipe([1, 2, 3, 4])
+  | afilter(async_is_even)  # [2, 4]
+  | sum
+).run() # Output: 6 (after 0.1s)
+```
+
 ##### TODO:
-- **filter_ / afilter**: Filter items in an iterable based on a predicate.
 - **reduce_ / areduce**: Reduce an iterable to a single value using a binary function.
 - **fork**: Split the data flow to multiple functions.
 - **apply**: Apply a function to an argument list.

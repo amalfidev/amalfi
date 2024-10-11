@@ -18,7 +18,7 @@ def map_[I, O](fn: Fn[I, O]) -> IterFn[I, O]:
     return lambda iterable: map(fn, iterable)
 
 
-def async_map[I, O](fn: AsyncFn[I, O]) -> AsyncIterFn[I, O]:
+def amap[I, O](fn: AsyncFn[I, O]) -> AsyncIterFn[I, O]:
     """
     Apply an async function to each element of an iterable.
     Raises exceptions from the async function.
@@ -39,7 +39,7 @@ def async_map[I, O](fn: AsyncFn[I, O]) -> AsyncIterFn[I, O]:
     return async_map
 
 
-def try_async_map[I, O](fn: AsyncFn[I, O]) -> AsyncIterFn[I, O | BaseException]:
+def try_amap[I, O](fn: AsyncFn[I, O]) -> AsyncIterFn[I, O | BaseException]:
     """
     Apply an async function to each element of an iterable and return a list of
     results or exceptions.
