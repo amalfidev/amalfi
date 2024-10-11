@@ -1,6 +1,6 @@
 import pytest
 
-from amalfi.core import IterFn, as_async
+from amalfi.core import Fn, IterFn, as_async
 from amalfi.ops import afilter, amap, filter_, map_, try_amap
 from amalfi.pipeline import AsyncPipeline, Pipeline
 
@@ -90,6 +90,16 @@ class TestFilter:
                 AsyncPipeline.pipe([1, 2, 3, 4])
                 | afilter(is_even_async)  # [2, 4]
                 | tuple  # (2, 4)
+            ).run()
+
+            assert result == (2, 4)
+
+        def test_filter_with_lambda(self):
+            is_even: Fn[int, bool] = lambda x: x % 2 == 0  # noqa: E731
+            result = (
+                Pipeline.pipe([1, 2, 3, 4])
+                | filter_(is_even)  # [2, 4]
+                | tuple
             ).run()
 
             assert result == (2, 4)
