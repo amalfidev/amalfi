@@ -1,6 +1,6 @@
 import pytest
 
-from amalfi.core import Fn, IterFn, as_async
+from amalfi.core import Fn, as_async
 from amalfi.ops import afilter, amap, filter_, map_, try_amap
 from amalfi.pipeline import AsyncPipeline, Pipeline
 
@@ -60,7 +60,8 @@ class TestMap:
 
 class TestFilter:
     def test_filter_with_lambda(self):
-        filter_odds: IterFn[int, int] = filter_(lambda x: x % 2 == 0)
+        is_even: Fn[int, bool] = lambda x: x % 2 == 0  # noqa: E731
+        filter_odds = filter_(is_even)
         assert list(filter_odds([1, 2, 3, 4])) == [2, 4]
 
     def test_filter_with_function(self):
