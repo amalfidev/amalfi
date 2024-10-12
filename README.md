@@ -1,8 +1,10 @@
 # Amalfi: Simple Functional Programming for Modern Python
 
-Amalfi is an open-source library for working with functional programming for modern Python, with a strong focus on type safety, asynchronous programming and ergonomy.
+Amalfi is an open-source library for working with functional programming for modern Python, with a strong focus on type safety,
+asynchronous programming and simplicity.
 
-It is designed to make functional programming accessible and easy to use, while leveraging the power of modern Python. It considers type hints and async/await to be first class citizens, always keeping ergonomy in mind.
+It is designed to make functional programming accessible and easy to use, while leveraging the power of modern Python.
+It considers type hints and async/await to be first class citizens, always keeping simplicity and a pythonic feel in mind.
 
 The core concepts of Amalfi are:
 - **Pipelining**: Chain functions together to form pipelines, synchronously or asynchronously.
@@ -74,9 +76,11 @@ See the [**amalfi package README**](amalfi/README.md) for more detailed document
 See the [**examples**](examples/README.md) directory for comprehensive examples of how to use Amalfi.
 
 ## Why another functional programming library for Python?
-Amalfi aims to fill the gap between functional programming and modern Python by being type-safe, async-friendly and ergonomical.
+Amalfi aims to fill the gap between functional programming and modern Python by being type-safe, async-friendly and easy to use,
+with a focus on simplicity and a pythonic feel.
 
-While libraries like RxPy and functoolz/itertoolz have been instrumental in bringing functional paradigms to Python, Amalfi brings several new features and improvements to the table.
+While libraries like RxPy and functoolz/itertoolz have been instrumental in bringing functional paradigms to Python,
+Amalfi brings several new features and improvements to the table.
 
 ### Key Innovations Introduced by Amalfi
 1. **Type Safety with Modern Python**
