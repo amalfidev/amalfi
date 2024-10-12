@@ -4,7 +4,7 @@ import pytest
 
 from amalfi.stream import Stream
 
-from .stub import add_one, multiply_by_two, yield_range
+from .stub import add_one, async_yield_range, multiply_by_two, yield_range
 
 
 @pytest.fixture
@@ -31,3 +31,8 @@ class TestStream:
         stream2 = Stream.ingest([0]) | multiply_by_two
         stream = stream1 + stream2
         assert stream.collect() == [4, 6, 8]
+
+    @pytest.mark.anyio
+    async def test_aingest(self):
+        stream = Stream.aingest(async_yield_range(1, 4)) | add_one
+        assert await stream.collect() == [2, 3, 4]
