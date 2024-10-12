@@ -85,8 +85,8 @@ class TestFilter:
 
     @pytest.mark.anyio
     async def test_filter_async_pipeline(self):
-        pipeline = AsyncPipeline.pipe([1, 2, 3, 4]) | filter_(is_even) | tuple | len
-        assert await pipeline.run() == 2
+        pipeline = AsyncPipeline.pipe([1, 2, 3, 4]).step(filter_(is_even)).step(tuple)
+        assert await pipeline.run() == (2, 4)
 
     class TestAsyncFilter:
         @pytest.mark.anyio
@@ -101,20 +101,16 @@ class TestFilter:
             result = await (
                 AsyncPipeline.pipe([1, 2, 3, 4])
                 | afilter(is_even_async)  # [2, 4]
-                | tuple  # (2, 4)
+                | list
             ).run()
 
-            assert result == (2, 4)
+            assert result == [2, 4]
 
         def test_filter_with_lambda(self):
             is_even: Fn[int, bool] = lambda x: x % 2 == 0  # noqa: E731
-            result = (
-                Pipeline.pipe([1, 2, 3, 4])
-                | filter_(is_even)  # [2, 4]
-                | tuple
-            ).run()
+            result = Pipeline.pipe([1, 2, 3, 4]).step(filter_(is_even)).step(list).run()
 
-            assert result == (2, 4)
+            assert result == [2, 4]
 
 
 # endregion: --filter

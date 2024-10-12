@@ -34,7 +34,7 @@ class TestPipeline:
         assert pipeline.input == 2
         assert pipeline() == 6
 
-        assert pipeline.with_input(3)() == 8
+        assert pipeline.with_input(3).run() == 8
 
     def test_concat(self):
         pipeline1 = Pipeline.pipe(1) | add_one

@@ -202,7 +202,7 @@ class AsyncPipeline[I, O]:
         """Execute the pipeline on the stored input."""
         return await self.run()
 
-    async def run(self):
+    async def run(self) -> O:
         """Execute the pipeline on the stored input."""
         return await self.fn(self.input)
 
