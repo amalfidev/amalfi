@@ -14,6 +14,10 @@ from .stub import (
 
 class TestPipeline:
     def test_pipe(self):
+        result = Pipeline.pipe(1).run()
+        assert result == 1
+
+    def test_composed_pipe(self):
         result = (
             Pipeline.pipe(1)
             .step(add_one)  # 2

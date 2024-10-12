@@ -41,3 +41,8 @@ async def wait_and_yield[T](iterable: Iterable[T]) -> AsyncIterator[T]:
     for item in iterable:
         await asyncio.sleep(0.1)
         yield item
+
+
+def yield_range(start: int, end: int) -> Generator[int, None, None]:
+    for i in range(start, end):
+        yield i
