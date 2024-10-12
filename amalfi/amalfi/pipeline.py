@@ -127,9 +127,9 @@ class Pipeline[I, O]:
 
         return Pipeline(self.input, concat_fn)
 
-    def __add__[U](self, other: Pipeline[O, U]) -> Pipeline[I, U]:
+    def __gt__[U](self, other: Pipeline[O, U]) -> Pipeline[I, U]:
         """
-        Concatenate two pipelines using the `+` operator.
+        Concatenate two pipelines using the `>` operator.
         Alias for `#concat` method.
         """
         return self.concat(other)
@@ -244,9 +244,9 @@ class AsyncPipeline[I, O]:
 
         return AsyncPipeline(self.input, concat_fn)
 
-    def __add__[U](self, other: AsyncPipeline[O, U]) -> AsyncPipeline[I, U]:
+    def __gt__[U](self, other: AsyncPipeline[O, U]) -> AsyncPipeline[I, U]:
         """
-        Concatenate two pipelines using the `+` operator.
+        Concatenate two pipelines using the `>` operator.
         Alias for `#concat` method.
         """
         return self.concat(other)

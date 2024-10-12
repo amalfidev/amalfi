@@ -43,7 +43,7 @@ class TestPipeline:
     def test_concat(self):
         pipeline1 = Pipeline.pipe(1) | add_one
         pipeline2 = Pipeline.pipe(0) | multiply_by_two
-        pipeline = pipeline1 + pipeline2
+        pipeline = pipeline1 > pipeline2
         assert pipeline() == 4
 
 
@@ -91,7 +91,7 @@ class TestAsyncPipeline:
     async def test_concat(self):
         pipeline1 = AsyncPipeline.pipe(1) | wait_and_add_one
         pipeline2 = AsyncPipeline.pipe(2) | multiply_by_two | wait_and_add_one
-        pipeline = pipeline1 + pipeline2
+        pipeline = pipeline1 > pipeline2
         assert await pipeline() == 5
 
     @pytest.mark.anyio
@@ -109,5 +109,5 @@ class TestAsyncPipeline:
         async_pipeline = AsyncPipeline.from_sync(pipeline)
         assert await async_pipeline() == 2
 
-        concat = AsyncPipeline.from_sync(pipeline).with_input(5) + async_pipeline
+        concat = AsyncPipeline.from_sync(pipeline).with_input(5) > async_pipeline
         assert await concat() == 7

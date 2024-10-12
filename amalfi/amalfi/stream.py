@@ -19,9 +19,9 @@ class Stream[I, O]:
         for item in self.input:
             yield self.fn(item)
 
-    def collect(self) -> list[O]:
+    def collect[T](self, into: Fn[Iterable[O], T] = list) -> T:
         """Execute the stream on the stored input and collect the results."""
-        return list(self.__iter__())
+        return into(self.__iter__())
 
     def step[U](self, fn: Fn[O, U]) -> Stream[I, U]:
         """
@@ -60,9 +60,9 @@ class Stream[I, O]:
 
         return Stream[I, U](self.input, concat_fn)
 
-    def __add__[U](self, other: Stream[O, U]) -> Stream[I, U]:
+    def __gt__[U](self, other: Stream[O, U]) -> Stream[I, U]:
         """
-        Concatenate two streams using the `+` operator.
+        Concatenate two streams using the `>` operator.
         Alias for `#concat` method.
         """
         return self.concat(other)
