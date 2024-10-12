@@ -3,7 +3,7 @@ from typing import AsyncIterator, Iterator
 from ..core import AsyncFn, Fn
 
 
-def collect[I, O](fn: Fn[I, Iterator[O]]) -> Fn[I, list[O]]:
+def collect_[I, O](fn: Fn[I, Iterator[O]]) -> Fn[I, list[O]]:
     """
     Collect all items from an iterator into a list.
     Useful for turning a generator into a list inside a pipeline.
