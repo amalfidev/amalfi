@@ -25,6 +25,20 @@ and returns an output of type `O`.
 ```
 """
 
+type VFn[**I, O] = Callable[I, O]
+"""
+A type alias for a variadic synchronous function,
+ie. it takes multiple arguments of types `I` and returns an
+output of type `O`.
+"""
+
+type AsyncVFn[**I, O] = Callable[I, Coroutine[Any, Any, O]]
+"""
+A type alias for a variadic asynchronous function,
+ie. it takes multiple arguments of types `I` and returns an
+output of type `O`. (V stands for 'Variadic')
+"""
+
 type IterFn[I, O] = Fn[Iterable[I], Iterable[O]]
 """
 A type alias for a synchronous function that takes an iterable of type `Iterable[I]`
@@ -39,12 +53,22 @@ and returns an iterable of type `Iterable[O]`.
 
 
 @runtime_checkable
-class TypeGuardProtocol[T, S](Protocol):
+class TypeGuardFn[T, S](Protocol):
+    """
+    A protocol for a type guard function that takes an argument of type `T`
+    and returns a `TypeGuard[S]`.
+    """
+
     def __call__(self, arg: T) -> TypeGuard[S]: ...
 
 
 @runtime_checkable
-class AsyncTypeGuardProtocol[T, S](Protocol):
+class AsyncTypeGuardFn[T, S](Protocol):
+    """
+    A protocol for an asynchronous type guard function that takes an argument
+    of type `T` and returns a `TypeGuard[S]`.
+    """
+
     async def __call__(self, arg: T) -> TypeGuard[S]: ...
 
 

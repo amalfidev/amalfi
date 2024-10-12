@@ -1,4 +1,5 @@
 import asyncio
+from typing import AsyncIterator, Generator, Iterable
 
 
 def add_one(x: int) -> int:
@@ -29,3 +30,14 @@ def greet(name: str) -> str:
 async def wait_and_emphasize(s: str) -> str:
     await asyncio.sleep(0.1)
     return s.upper() + "!"
+
+
+def yield_items[T](iterable: Iterable[T]) -> Generator[T, None, None]:
+    for item in iterable:
+        yield item
+
+
+async def wait_and_yield[T](iterable: Iterable[T]) -> AsyncIterator[T]:
+    for item in iterable:
+        await asyncio.sleep(0.1)
+        yield item

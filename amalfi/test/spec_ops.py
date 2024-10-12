@@ -1,12 +1,19 @@
 import pytest
 
 from amalfi.core import Fn, as_async
-from amalfi.ops import afilter, amap, filter_, map_, try_amap
+from amalfi.ops import acollect, afilter, amap, collect, filter_, map_, try_amap
 from amalfi.pipeline import AsyncPipeline, Pipeline
 
-from .stub import is_even, multiply_by_two, wait_and_emphasize
+from .stub import (
+    is_even,
+    multiply_by_two,
+    wait_and_emphasize,
+    wait_and_yield,
+    yield_items,
+)
 
 
+# region: --map
 class TestMap:
     def test_map(self):
         mapped = map_(multiply_by_two)([1, 2, 3])
@@ -58,6 +65,10 @@ class TestMap:
             assert result == 2
 
 
+# endregion: --map
+
+
+# region: --filter
 class TestFilter:
     def test_filter_with_lambda(self):
         is_even: Fn[int, bool] = lambda x: x % 2 == 0  # noqa: E731
@@ -104,3 +115,28 @@ class TestFilter:
             ).run()
 
             assert result == (2, 4)
+
+
+# endregion: --filter
+
+
+# region: --collect
+class TestCollect:
+    def test_collect(self):
+        assert collect(yield_items)([1, 2, 3]) == [1, 2, 3]
+
+    def test_collect_in_pipeline(self):
+        pipeline = Pipeline.pipe([1, 2, 3]) | collect(yield_items) | sum
+        assert pipeline.run() == 6
+
+    @pytest.mark.anyio
+    async def test_acollect(self):
+        assert await acollect(wait_and_yield)([1, 2, 3]) == [1, 2, 3]
+
+    @pytest.mark.anyio
+    async def test_acollect_in_pipeline(self):
+        pipeline = AsyncPipeline.pipe([1, 2, 3]) | acollect(wait_and_yield) | sum
+        assert await pipeline.run() == 6
+
+
+# endregion: --collect

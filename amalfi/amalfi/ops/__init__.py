@@ -1,3 +1,4 @@
+from .collect import acollect, collect
 from .filter import afilter, filter_
 from .map import amap, map_, try_amap
 
@@ -9,4 +10,7 @@ __all__ = [
     # filter
     "afilter",
     "filter_",
+    # collect
+    "collect",
+    "acollect",
 ]

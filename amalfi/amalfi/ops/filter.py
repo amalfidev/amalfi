@@ -1,14 +1,7 @@
 import asyncio
 from typing import Iterable, cast, overload
 
-from ..core import (
-    AsyncFn,
-    AsyncIterFn,
-    AsyncTypeGuardProtocol,
-    Fn,
-    IterFn,
-    TypeGuardProtocol,
-)
+from ..core import AsyncFn, AsyncIterFn, AsyncTypeGuardFn, Fn, IterFn, TypeGuardFn
 
 
 @overload
@@ -16,14 +9,14 @@ def filter_[T](fn: None) -> IterFn[T, T]: ...
 
 
 @overload
-def filter_[T, S](fn: TypeGuardProtocol[T, S]) -> IterFn[T, S]: ...
+def filter_[T, S](fn: TypeGuardFn[T, S]) -> IterFn[T, S]: ...
 
 
 @overload
 def filter_[T](fn: Fn[T, bool]) -> IterFn[T, T]: ...
 
 
-def filter_[T, S](fn: Fn[T, bool] | TypeGuardProtocol[T, S] | None) -> IterFn[T, S]:
+def filter_[T, S](fn: Fn[T, bool] | TypeGuardFn[T, S] | None) -> IterFn[T, S]:
     """
     Filter elements of an iterable using a predicate function.
 
@@ -37,7 +30,7 @@ def filter_[T, S](fn: Fn[T, bool] | TypeGuardProtocol[T, S] | None) -> IterFn[T,
 
 
 @overload
-def afilter[T, S](fn: AsyncTypeGuardProtocol[T, S]) -> AsyncIterFn[T, S]: ...
+def afilter[T, S](fn: AsyncTypeGuardFn[T, S]) -> AsyncIterFn[T, S]: ...
 
 
 @overload
@@ -45,7 +38,7 @@ def afilter[T](fn: AsyncFn[T, bool]) -> AsyncIterFn[T, T]: ...
 
 
 def afilter[T, S](
-    fn: AsyncFn[T, bool] | AsyncTypeGuardProtocol[T, S],
+    fn: AsyncFn[T, bool] | AsyncTypeGuardFn[T, S],
 ) -> AsyncIterFn[T, S]:
     """
     Filter elements of an iterable using an async predicate function.

@@ -72,7 +72,7 @@ class TestAsyncPipeline:
         assert result == 3
 
         result = await (
-            Pipeline.pipe_async("Alice")
+            Pipeline.apipe("Alice")
             | greet
             | wait_and_emphasize  # async
             | len

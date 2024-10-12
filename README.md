@@ -29,7 +29,7 @@ async def wait_and_multiply_by_two(x: int) -> int:
 divide_by_two: Fn[int, float] = lambda x: x / 2.0
 
 pipeline = (
-  AsyncPipeline.pipe(3) # asynchronous pipeline that needs to be awaited
+  Pipeline.apipe(3) # asynchronous pipeline that needs to be awaited
   | add_one 
   | wait_and_multiply_by_two 
   | divide_by_two
@@ -198,6 +198,8 @@ print(result) # Output: 12 (after 0.1s)
 - `afilter`: Async version of `filter_`.
 - `filter_`: Filter items in an iterable based on a predicate.
 
+Both `filter_` and `afilter` support type narrowing using `TypeGuard` predicates for improved type safety.
+
 ```python
 from amalfi.ops import afilter, filter_
 
@@ -218,8 +220,51 @@ result = await (
 ).run() # Output: 6 (after 0.1s)
 ```
 
+#### Reducing
+- `reduce_`: Reduce an iterable to a single value using a binary function.
+- `areduce`: Async version of `reduce_`. It is concurrent and will evaluate the binary function concurrently for each pair of elements in the iterable in a sequential (not parallel) manner.
+
+```python
+from amalfi.ops import areduce, reduce_
+
+result = Pipeline.pipe([1, 2, 3, 4]) | reduce_(lambda x, y: x + y)
+print(result) # Output: 10
+
+
+async def async_add(x: int, y: int) -> int:
+    await asyncio.sleep(0.1)
+    return x + y
+
+result = await (
+  AsyncPipeline.pipe([1, 2, 3, 4]) | areduce(async_add)
+).run()
+print(result) # Output: 10 (after 0.4s = 0.1s per pair of elements)
+```
+
+#### Collecting
+- `collect`: Collect all items from an iterable into a list. Useful for turning a generator into a list inside a pipeline.
+- `acollect`: Async version of `collect`. Useful for turning an async generator into a list inside an async pipeline.
+
+```python
+from amalfi.ops import collect, acollect
+def yield_items(xs: Iterable[int]) -> Generator[int, None, None]: # dummy generator
+    for x in xs:
+        yield x
+
+pipeline = Pipeline.pipe([1, 2, 3]) | collect(yield_items) | sum
+print(pipeline.run()) # Output: 6
+
+async def async_yield_items(xs: Iterable[int]) -> AsyncIterator[int]:
+    for x in xs:
+        await asyncio.sleep(0.1)
+        yield x
+
+pipeline = AsyncPipeline.pipe([1, 2, 3]) | acollect(async_yield_items) | sum
+print(await pipeline.run()) # Output: 6 (after 0.3s)
+```
+
 ##### TODO:
-- **reduce_ / areduce**: Reduce an iterable to a single value using a binary function.
+- **fork**: Split the data flow to multiple functions.
 - **fork**: Split the data flow to multiple functions.
 - **apply**: Apply a function to an argument list.
 - **chain**: Compose multiple functions together.
@@ -231,6 +276,7 @@ result = await (
 - **to_async**: Convert a synchronous function to an asynchronous one.
 - **to_thread**: Run a function in a separate thread.
 - **to_process**: Run a function in a separate process.
+
 
 ## Monads
 

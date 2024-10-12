@@ -140,7 +140,7 @@ class Pipeline[I, O]:
         return Pipeline[T, T](input, identity)
 
     @classmethod
-    def pipe_async[T](cls, input: T) -> AsyncPipeline[T, T]:
+    def apipe[T](cls, input: T) -> AsyncPipeline[T, T]:
         """Create a new AsyncPipeline instance with the given input."""
         return AsyncPipeline.pipe(input)
 
