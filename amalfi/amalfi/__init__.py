@@ -1,4 +1,15 @@
-from .core import AsyncFn, AsyncIterFn, Fn, IterFn, as_async, identity
+from .core import (
+    AsyncFn,
+    AsyncIterFn,
+    AsyncTypeGuardFn,
+    AsyncVFn,
+    Fn,
+    IterFn,
+    TypeGuardFn,
+    VFn,
+    as_async,
+    identity,
+)
 from .pipeline import AsyncPipeline, Pipeline
 
 __all__ = [
@@ -6,9 +17,13 @@ __all__ = [
     "as_async",
     "identity",
     "AsyncFn",
+    "AsyncTypeGuardFn",
+    "AsyncVFn",
     "Fn",
-    "IterFn",
     "AsyncIterFn",
+    "IterFn",
+    "TypeGuardFn",
+    "VFn",
     # pipeline
     "AsyncPipeline",
     "Pipeline",

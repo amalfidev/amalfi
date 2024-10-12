@@ -11,7 +11,7 @@ class TestMap:
         mapped = map_(multiply_by_two)([1, 2, 3])
         assert list(mapped) == [2, 4, 6]
 
-    def test_in_pipeline(self):
+    def test_map_in_pipeline(self):
         pipeline = Pipeline.pipe([1, 2, 3]) | map_(multiply_by_two) | sum
         assert pipeline.run() == 12
 

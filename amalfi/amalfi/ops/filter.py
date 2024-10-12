@@ -41,10 +41,10 @@ def filter_[T, S](fn: Fn[T, bool] | TypeGuardFn[T, S] | None) -> IterFn[T, S]:
         [2, 4]
     """
 
-    def inner(iterable: Iterable[T]) -> Iterable[S]:
+    def inner_filter(iterable: Iterable[T]) -> Iterable[S]:
         return cast(Iterable[S], filter(fn, iterable))
 
-    return inner
+    return inner_filter
 
 
 @overload
@@ -90,9 +90,9 @@ def afilter[T, S](
         [2, 4]
     """
 
-    async def inner(iterable: Iterable[T]) -> Iterable[S]:
+    async def inner_filter(iterable: Iterable[T]) -> Iterable[S]:
         results = await asyncio.gather(*map(fn, iterable))
         filtered = (val for val, result in zip(iterable, results) if result)
         return cast(Iterable[S], filtered)
 
-    return inner
+    return inner_filter

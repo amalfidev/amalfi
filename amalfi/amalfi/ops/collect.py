@@ -29,10 +29,10 @@ def collect_[I, O](fn: Fn[I, Iterator[O]]) -> Fn[I, list[O]]:
         12
     """
 
-    def inner(input: I) -> list[O]:
+    def collector(input: I) -> list[O]:
         return [item for item in fn(input)]
 
-    return inner
+    return collector
 
 
 def acollect[I, O](fn: Fn[I, AsyncIterator[O]]) -> AsyncFn[I, list[O]]:
@@ -62,7 +62,7 @@ def acollect[I, O](fn: Fn[I, AsyncIterator[O]]) -> AsyncFn[I, list[O]]:
         [2, 4, 6]
     """
 
-    async def inner(input: I) -> list[O]:
+    async def collector(input: I) -> list[O]:
         return [item async for item in fn(input)]
 
-    return inner
+    return collector
