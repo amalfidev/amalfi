@@ -1,13 +1,10 @@
-# amalfi
-
-
-## Documentation and Usage
+# Amalfi: Documentation and Usage
 See the [examples](../examples/README.md) directory for more advanced usage.
 
-### Core Function types
+## Core Function types
 The following types are useful to annotate functions and methods and are used throughout the library. They aim to be as simple and intuitive as possible, and provide ergonomy when working with type annotated functions.
 
-#### `Fn`: The Function Type
+### `Fn`: The Function Type
 A type alias for a synchronous function that takes an input of type `I` and returns an output of type `O`. This represents a callable (function or method) that can be invoked with a single argument of type `I` and returns a value of type `O`. 
 
   **Usage examples**:
@@ -17,7 +14,7 @@ A type alias for a synchronous function that takes an input of type `I` and retu
   add_one: Callable[[int], int] = lambda x: x + 1
   ```
 
-#### `AsyncFn`: The Asynchronous Function Type
+### `AsyncFn`: The Asynchronous Function Type
 A type alias for an asynchronous function that takes an input of type `I` and returns an output of type `O`. This represents a callable (function or method) that can be invoked with a single argument of type `I` and returns a coroutine that eventually produces a value of type `O`.
 
   **Usage examples:**
@@ -34,7 +31,7 @@ A type alias for an asynchronous function that takes an input of type `I` and re
   result = await add_one_async(5)  # Output: 6 (after 1 second delay)
   ```
 
-#### `IterFn`: The Iterable Function Type
+### `IterFn`: The Iterable Function Type
 A type alias for a synchronous function that takes an iterable of type `Iterable[I]` and returns an iterable of type `Iterable[O]`. This represents a callable (function or method) that can be invoked with an iterable of type `Iterable[I]` and returns an iterable of type `Iterable[O]`.
 
   **Usage examples:**
@@ -48,7 +45,7 @@ A type alias for a synchronous function that takes an iterable of type `Iterable
   print(list(result))  # Output: [2, 3, 4]
   ```
 
-#### `AsyncIterFn`: The Asynchronous Iterable Function Type
+### `AsyncIterFn`: The Asynchronous Iterable Function Type
 A type alias for an asynchronous function that takes an iterable of type `Iterable[I]` and returns an iterable of type `Iterable[O]`. This represents a callable (function or method) that can be invoked with an iterable of type `Iterable[I]` and returns a coroutine that eventually produces an iterable of type `Iterable[O]`.
 
   **Usage examples:**
@@ -66,10 +63,10 @@ A type alias for an asynchronous function that takes an iterable of type `Iterab
   print(list(result))  # Output: [2, 3, 4] (after 1 second delay)
   ```
 
-### Utilities
+## Utilities
 The following utilities are useful to work with functions and are used throughout the library as well. They can become handy when working with the library in a type-safe manner.
 
-#### `as_async`: Convert a function from sync to async
+### `as_async`: Convert a function from sync to async
 Converts a synchronous function to an asynchronous function. If the input function is already asynchronous, it will be returned as is. This can be used as a decorator.
 Useful for working with sync functions in an async context, or for converting sync methods to async.
 
@@ -120,8 +117,8 @@ Useful for working with sync functions in an async context, or for converting sy
 - **`|` Operator**: Use the bitwise OR operator to chain functions in a pipeline.
 - **step**: Add a function to the pipeline.
 
-### Operators
-#### Mapping
+## Operators
+### Mapping
 - `map_`: Apply a function over an iterable, possibly asynchronously.
 - `amap`: Async version of `map_`. Analogous to `asyncio.gather` but for pipelines.
 ```python
@@ -141,7 +138,7 @@ result = AsyncPipeline.pipe([1, 2, 3]) | amap(wait_and_multiply_by_two) | sum
 print(result) # Output: 12 (after 0.1s)
 ```
 
-#### Filtering
+### Filtering
 - `afilter`: Async version of `filter_`.
 - `filter_`: Filter items in an iterable based on a predicate.
 
@@ -167,7 +164,7 @@ result = await (
 ).run() # Output: 6 (after 0.1s)
 ```
 
-#### Reducing
+### Reducing
 - `reduce_`: Reduce an iterable to a single value using a binary function.
 - `areduce`: Async version of `reduce_`. It is concurrent and will evaluate the binary function concurrently for each pair of elements in the iterable in a sequential (not parallel) manner.
 
@@ -188,7 +185,7 @@ result = await (
 print(result) # Output: 10 (after 0.4s = 0.1s per pair of elements)
 ```
 
-#### Collecting
+### Collecting
 - `collect`: Collect all items from an iterable into a list. Useful for turning a generator into a list inside a pipeline.
 - `acollect`: Async version of `collect`. Useful for turning an async generator into a list inside an async pipeline.
 
@@ -210,7 +207,7 @@ pipeline = AsyncPipeline.pipe([1, 2, 3]) | acollect(async_yield_items) | sum
 print(await pipeline.run()) # Output: 6 (after 0.3s)
 ```
 
-##### TODO:
+### TODO:
 - **fork**: Split the data flow to multiple functions.
 - **fork**: Split the data flow to multiple functions.
 - **apply**: Apply a function to an argument list.
