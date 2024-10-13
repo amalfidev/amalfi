@@ -1,6 +1,6 @@
 import pytest
 
-from amalfi.core import Fn, as_async
+from amalfi import Fn, as_async
 from amalfi.ops import acollect, afilter, collect_, filter_
 from amalfi.pipeline import Pipeline
 

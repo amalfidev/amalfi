@@ -2,8 +2,9 @@ import asyncio
 
 import pytest
 
-from amalfi import Pipeline, VFn
-from amalfi.ops.reduce import areduce, reduce_
+from amalfi import VFn
+from amalfi.ops import areduce, reduce_
+from amalfi.pipeline import Pipeline
 
 add: VFn[[int, int], int] = lambda x, y: x + y  # noqa: E731
 

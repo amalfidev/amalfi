@@ -1,11 +1,11 @@
 .PHONY: help install lint format typecheck test clean publish
 
 # Variables for test directories
-AMALFI_TEST_DIR=amalfi
-EXAMPLES_TEST_DIR=examples
+AMALFI_DIR=amalfi
+EXAMPLES_DIR=examples
 
 # Default test directories
-TEST_DIRS=$(AMALFI_TEST_DIR) $(EXAMPLES_TEST_DIR)
+TEST_DIRS=$(AMALFI_DIR) $(EXAMPLES_DIR)
 
 # Default target
 help:
@@ -14,12 +14,12 @@ help:
 	@echo "  make lint                - Run linter (Ruff)"
 	@echo "  make format              - Run code formatter (Ruff)"
 	@echo "  make typecheck           - Run type checker (Pyright)"
-	@echo "  make test [pkg=...]  - Run tests (optionally specify pkg)"
+	@echo "  make test [pkg=...]      - Run tests (optionally specify pkg)"
 	@echo "                             Packages: amalfi, examples"
 	@echo "  make clean               - Remove build artifacts"
 	@echo "  make all                 - Run lint, format, typecheck, and test"
 	@echo "  make publish             - Build and publish Amalfi to PyPI"
-
+	@echo "  make example [name=...]  - Run examples, specify name"
 # Install dependencies
 install:
 	poetry install
@@ -43,10 +43,10 @@ ifeq ($(pkg),)
 	poetry run pytest $(TEST_DIRS)
 else ifeq ($(pkg),amalfi)
 	@echo "Running tests for 'amalfi' package..."
-	poetry run pytest $(AMALFI_TEST_DIR)
+	poetry run pytest $(AMALFI_DIR)
 else ifeq ($(pkg),examples)
 	@echo "Running tests for 'examples'..."
-	poetry run pytest $(EXAMPLES_TEST_DIR)
+	poetry run pytest $(EXAMPLES_DIR)
 else
 	@echo "Unknown package: '$(pkg)'. Available options are: amalfi, examples."
 	@exit 1
@@ -66,3 +66,10 @@ ci: lint format typecheck test
 publish:
 	@echo "Building and publishing Amalfi to PyPI..."
 	cd amalfi && poetry build && poetry publish
+
+# Run example
+example:
+	@echo "\nRunning examples for $(name)..."
+ifeq ($(name),stream)
+	poetry run python $(EXAMPLES_DIR)/streams/__init__.py
+endif

@@ -2,7 +2,7 @@ import inspect
 
 import pytest
 
-from amalfi.core import AsyncFn, Fn, as_async, identity
+from amalfi import AsyncFn, Fn, as_async, identity
 
 
 def test_identity():

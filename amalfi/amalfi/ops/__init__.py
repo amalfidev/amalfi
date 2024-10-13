@@ -1,6 +1,7 @@
 from .collect import acollect, collect_
 from .filter import afilter, filter_
 from .map import amap, map_
+from .reduce import areduce, reduce_
 
 __all__ = [
     # map
@@ -12,4 +13,7 @@ __all__ = [
     # collect
     "collect_",
     "acollect",
+    # reduce
+    "areduce",
+    "reduce_",
 ]

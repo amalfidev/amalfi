@@ -1,146 +1,144 @@
 from __future__ import annotations
 
-from typing import AsyncIterable, AsyncIterator, Iterable, Iterator
+from itertools import islice, takewhile
+from typing import Iterable, Iterator, overload
 
-from .core import AsyncFn, Fn, as_async, identity
+from .core import Fn
 
 
-class Stream[I, O]:
-    input: Iterable[I]
-    fn: Fn[I, O]
+class Stream[I]:
+    _iter: Iterable[I]
 
-    def __init__(self, input: Iterable[I], fn: Fn[I, O]):
+    def __init__(self, input: Iterable[I]):
         """Initialize the `Stream` with an input value and a function."""
-        self.input = input
-        self.fn = fn
-
-    def __iter__(self) -> Iterator[O]:
-        """Execute the stream on the stored input."""
-        for item in self.input:
-            yield self.fn(item)
-
-    def collect[T](self, into: Fn[Iterable[O], T] = list) -> T:
-        """Execute the stream on the stored input and collect the results."""
-        return into(self.__iter__())
-
-    def step[U](self, fn: Fn[O, U]) -> Stream[I, U]:
-        """
-        Adds a function as a step to the stream.
-
-        This method creates a new `Stream` instance that composes the current stream
-        function with the provided function `fn`.
-        """
-
-        def composed_fn(value: I) -> U:
-            return fn(self.fn(value))
-
-        return Stream[I, U](self.input, composed_fn)
-
-    def __or__[U](self, fn: Fn[O, U]) -> Stream[I, U]:
-        """
-        Adds a function as a step to the stream using the `|` operator.
-        Alias for `#step` method.
-        """
-
-        return self.step(fn)
-
-    def with_input(self, value: Iterable[I]) -> Stream[I, O]:
-        """Change the input value of the stream."""
-        return Stream(value, self.fn)
-
-    def concat[U](self, other: Stream[O, U]) -> Stream[I, U]:
-        """
-        Concatenate two streams. The output of the current stream is passed
-        as input to the other stream, regardless of the input value of the
-        other stream.
-        """
-
-        def concat_fn(value: I) -> U:
-            return other.fn(self.fn(value))
-
-        return Stream[I, U](self.input, concat_fn)
-
-    def __gt__[U](self, other: Stream[O, U]) -> Stream[I, U]:
-        """
-        Concatenate two streams using the `>` operator.
-        Alias for `#concat` method.
-        """
-        return self.concat(other)
+        self._iter = input
 
     @classmethod
-    def ingest[T](cls, input: Iterable[T]) -> Stream[T, T]:
-        """Create a new Stream instance with the given input."""
-
-        return Stream(input, identity)
+    def from_str(cls, value: str) -> Stream[str]:
+        return Stream([value])
 
     @classmethod
-    def aingest[T](cls, input: AsyncIterable[T]) -> AsyncStream[T, T]:
-        """Create a new AsyncStream instance with the given input."""
-        return AsyncStream(input, as_async(identity))
+    def from_bytes(cls, value: bytes) -> Stream[bytes]:
+        return Stream([value])
 
+    def __iter__(self) -> Iterator[I]:
+        """Execute the stream on the input."""
+        yield from self._iter
 
-class AsyncStream[I, O]:
-    input: AsyncIterable[I]
-    fn: AsyncFn[I, O]
+    def __repr__(self) -> str:
+        return f"Stream({self._iter.__repr__()})"
 
-    def __init__(self, input: AsyncIterable[I], fn: AsyncFn[I, O]):
-        self.input = input
-        self.fn = fn
+    @overload
+    def collect(self, into: None = None) -> list[I]: ...
 
-    async def __aiter__(self) -> AsyncIterator[O]:
-        """Execute the stream on the stored input asynchronously."""
-        async for item in self.input:
-            yield await self.fn(item)
+    @overload
+    def collect[T](self, into: Fn[Iterable[I], T]) -> T: ...
 
-    async def collect(self) -> list[O]:
-        """Execute the stream on the stored input and collect the results."""
-        return [item async for item in self.__aiter__()]
-
-    def step[U](self, fn: Fn[O, U] | AsyncFn[O, U]) -> AsyncStream[I, U]:
-        """Adds a function as a step to the stream."""
-
-        async def composed_fn(value: I) -> U:
-            return await as_async(fn)(await self.fn(value))
-
-        return AsyncStream[I, U](self.input, composed_fn)
-
-    def __or__[U](self, fn: Fn[O, U] | AsyncFn[O, U]) -> AsyncStream[I, U]:
+    def collect[T](self, into: Fn[Iterable[I], T] | None = None) -> T | list[I]:
         """
-        Adds a function as a step to the stream using the `|` operator.
-        Alias for `#step` method.
+        Execute the stream on the input and collect the results into a custom
+        collection type, which defaults to a list.
         """
-        return self.step(fn)
+        if not into:
+            return list(self)
+        return into(self)
 
-    def with_input(self, value: AsyncIterable[I]) -> AsyncStream[I, O]:
-        """Change the input value of the stream."""
-        return AsyncStream(value, self.fn)
-
-    def concat[U](self, other: AsyncStream[O, U]) -> AsyncStream[I, U]:
+    def map[O](self, fn: Fn[I, O]) -> Stream[O]:
         """
-        Concatenate two streams. The output of the current stream is passed
-        as input to the other stream, regardless of the input value of the
-        other stream.
+        Adds a mapping step to the stream, returning a new stream of the
+        mapped values.
         """
 
-        async def concat_fn(value: I) -> U:
-            return await other.fn(await self.fn(value))
+        return Stream(map(fn, self))
 
-        return AsyncStream[I, U](self.input, concat_fn)
-
-    @classmethod
-    def ingest[T](cls, input: AsyncIterable[T]) -> AsyncStream[T, T]:
-        """Create a new AsyncStream instance with the given input."""
-        return AsyncStream(input, as_async(identity))
-
-    @classmethod
-    def from_sync[T](cls, stream: Stream[T, T]) -> AsyncStream[T, T]:
+    def filter(self, fn: Fn[I, bool]) -> Stream[I]:
         """
-        Convert a synchronous stream to an asynchronous one,
-        using the original input value.
+        Adds a filtering step to the stream, returning a new stream of the
+        filtered values.
         """
+        return Stream(filter(fn, self))
 
-        async def async_input() -> AsyncIterator[T]:
-            for item in stream.input:
-                yield item
+    def take(self, n: int) -> Stream[I]:
+        """Take the first `n` values from the stream."""
+        return Stream(islice(self, n))
 
-        return AsyncStream(async_input(), as_async(stream.fn))
+    def take_while(self, fn: Fn[I, bool]) -> Stream[I]:
+        """Take values from the stream while the predicate is true."""
+        return Stream(takewhile(fn, self))
+
+    # def list(self) -> list[I]:
+    #     return self.collect(list)
+
+    # def tuple(self) -> tuple[I, ...]:
+    #     return self.collect(tuple)
+
+    # def set(self) -> set[I]:
+    #     return self.collect(set)
+
+    # def deque(self) -> deque[I]:
+    #     return self.collect(deque)
+
+    # @classmethod
+    # def aingest[T](cls, input: AsyncIterable[T]) -> AsyncStream[T, T]:
+    #     """Create a new AsyncStream instance with the given input."""
+    #     return AsyncStream(input, as_async(identity))
+
+
+# class AsyncStream[I, O]:
+#     input: AsyncIterable[I]
+#     fn: AsyncFn[I, O]
+
+#     def __init__(self, input: AsyncIterable[I], fn: AsyncFn[I, O]):
+#         self.input = input
+#         self.fn = fn
+
+#     async def __aiter__(self) -> AsyncIterator[O]:
+#         """Execute the stream on the stored input asynchronously."""
+#         async for item in self.input:
+#             yield await self.fn(item)
+
+#     async def collect(self) -> list[O]:
+#         """Execute the stream on the stored input and collect the results."""
+#         return [item async for item in self.__aiter__()]
+
+#     def map[U](self, fn: Fn[O, U] | AsyncFn[O, U]) -> AsyncStream[I, U]:
+#         """Adds a mapping function to the stream."""
+
+#         async def composed_fn(value: I) -> U:
+#             return await as_async(fn)(await self.fn(value))
+
+#         return AsyncStream[I, U](self.input, composed_fn)
+
+#     def with_input(self, value: AsyncIterable[I]) -> AsyncStream[I, O]:
+#         """Change the input value of the stream."""
+#         return AsyncStream(value, self.fn)
+
+#     def concat[U](self, other: AsyncStream[O, U]) -> AsyncStream[I, U]:
+#         """
+#         Concatenate two streams. The output of the current stream is passed
+#         as input to the other stream, regardless of the input value of the
+#         other stream.
+#         """
+
+#         async def concat_fn(value: I) -> U:
+#             return await other.fn(await self.fn(value))
+
+#         return AsyncStream[I, U](self.input, concat_fn)
+
+#     @classmethod
+#     def ingest[T](cls, input: AsyncIterable[T]) -> AsyncStream[T, T]:
+#         """Create a new AsyncStream instance with the given input."""
+#         return AsyncStream(input, as_async(identity))
+
+#     @classmethod
+#     def from_sync[T](cls, stream: Stream[T, T]) -> AsyncStream[T, T]:
+#         """
+#         Convert a synchronous stream to an asynchronous one,
+#         using the original input value.
+#         """
+
+#         async def async_input() -> AsyncIterator[T]:
+#             for item in stream.input:
+#                 yield item
+
+#         return AsyncStream(async_input(), as_async(stream.fn))

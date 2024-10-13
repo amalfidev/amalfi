@@ -10,7 +10,6 @@ from .core import (
     as_async,
     identity,
 )
-from .pipeline import AsyncPipeline, Pipeline
 
 __all__ = [
     # core
@@ -24,7 +23,4 @@ __all__ = [
     "IterFn",
     "TypeGuardFn",
     "VFn",
-    # pipeline
-    "AsyncPipeline",
-    "Pipeline",
 ]
