@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 from typing import (
     Any,
+    AsyncIterator,
     Callable,
     Coroutine,
     Iterable,
@@ -88,3 +89,13 @@ def as_async[I, O](fn: Fn[I, O] | AsyncFn[I, O]) -> AsyncFn[I, O]:
         return cast(O, result)
 
     return async_fn
+
+
+def as_aiter[I](iterable: Iterable[I]) -> AsyncIterator[I]:
+    """Convert an iterable to an async iterator."""
+
+    async def aiter() -> AsyncIterator[I]:
+        for item in iterable:
+            yield item
+
+    return aiter()

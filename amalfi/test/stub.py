@@ -48,7 +48,7 @@ def yield_range(start: int, end: int) -> Generator[int, None, None]:
         yield i
 
 
-async def async_yield_range(start: int, end: int) -> AsyncIterator[int]:
+async def ayield_range(start: int, end: int) -> AsyncIterator[int]:
     for i in range(start, end):
         await asyncio.sleep(0.1)
         yield i

@@ -3,6 +3,7 @@ import inspect
 import pytest
 
 from amalfi import AsyncFn, Fn, as_async, identity
+from amalfi.core import as_aiter
 
 
 def test_identity():
@@ -53,3 +54,10 @@ class TestAsAsync:
         assert inspect.iscoroutinefunction(add_one)
         assert inspect.iscoroutine(result)
         assert await result == 2
+
+
+class TestAiter:
+    @pytest.mark.anyio
+    async def test_aiter(self):
+        result = [i async for i in as_aiter([1, 2, 3])]
+        assert result == [1, 2, 3]
