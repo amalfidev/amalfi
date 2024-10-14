@@ -25,6 +25,14 @@ class Stream[I]:
         """Convert the stream to an async stream."""
         return AsyncStream(as_aiter(self))
 
+    def to_pipe(self) -> Pipeline[Iterable[I], Iterable[I]]:
+        """Convert the stream to a pipeline."""
+        return pipe(iter(self))
+
+    def to_apipe(self) -> AsyncPipeline[Iterable[I], Iterable[I]]:
+        """Convert the stream to an async pipeline."""
+        return apipe(iter(self))
+
     # region: --collect
     @overload
     def collect(self, into: None = None) -> list[I]: ...
@@ -42,14 +50,6 @@ class Stream[I]:
         return into(self)
 
     # endregion --collect
-
-    def to_pipe(self) -> Pipeline[Iterable[I], Iterable[I]]:
-        """Convert the stream to a pipeline."""
-        return pipe(iter(self))
-
-    def to_apipe(self) -> AsyncPipeline[Iterable[I], Iterable[I]]:
-        """Convert the stream to an async pipeline."""
-        return apipe(iter(self))
 
     # region: --ops
     def map[O](self, fn: Fn[I, O]) -> Stream[O]:
@@ -121,6 +121,14 @@ class AsyncStream[I]:
 
     def __repr__(self) -> str:
         return f"AsyncStream({self._aiter.__repr__()})"
+
+    async def to_pipe(self) -> Pipeline[Iterable[I], Iterable[I]]:
+        """Convert the async stream to a pipeline."""
+        return pipe(await self.collect())
+
+    async def to_apipe(self) -> AsyncPipeline[Iterable[I], Iterable[I]]:
+        """Convert the stream to an async pipeline."""
+        return apipe(await self.collect())
 
     # region: --collect
     @overload
