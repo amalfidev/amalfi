@@ -3,7 +3,7 @@ from __future__ import annotations
 from itertools import islice, takewhile
 from typing import AsyncIterable, AsyncIterator, Iterable, Iterator, overload
 
-from .core import Fn, as_aiter
+from .core import AsyncFn, Fn, as_aiter, as_async
 from .pipeline import AsyncPipeline, Pipeline, apipe, pipe
 
 
@@ -86,7 +86,6 @@ def stream[I](input: Iterable[I]) -> Stream[I]:
 # TODO:
 # - operators: see https://rxjs.dev/guide/operators#transformation-operators
 # -- gather (list, tuple, set, deque, custom fn), seq/parallel
-# -- to_pipe
 # -- amap / afilter
 # -- reduce / areduce
 # -- count
@@ -105,8 +104,10 @@ def stream[I](input: Iterable[I]) -> Stream[I]:
 # -- reversed
 # -- unique
 # -- intersperse
-# TODO: to pipe
-# TODO: to async
+# - to_thread (asyncio, concurrent.futures, threading)
+# - to_process (multiprocessing)
+# - to_executor (concurrent.futures)
+# - to_queue (multiprocessing)
 
 
 class AsyncStream[I]:
@@ -146,6 +147,28 @@ class AsyncStream[I]:
         return collected if not into else into(collected)
 
     # endregion --collect
+
+    # region: --ops
+    def map[O](self, fn: Fn[I, O] | AsyncFn[I, O]) -> AsyncStream[O]:
+        """
+        Adds a mapping step to the stream, returning a new stream of the
+        mapped values. The mapping function can be either synchronous or
+        asynchronous.
+
+        Example:
+        ```python
+        result = await astream([1, 2, 3]).map(lambda x: x + 1).collect()
+        assert result == [2, 3, 4]
+        ```
+        """
+
+        async def amap():
+            async for i in self:
+                yield await as_async(fn)(i)
+
+        return AsyncStream(amap())
+
+    # endregion --ops
 
 
 def astream[I](input: AsyncIterable[I]) -> AsyncStream[I]:

@@ -6,7 +6,7 @@ def add_one(x: int) -> int:
     return x + 1
 
 
-def multiply_by_two(x: int) -> int:
+def double(x: int) -> int:
     return x * 2
 
 
@@ -17,6 +17,11 @@ def is_even(x: int) -> bool:
 async def wait_and_add_one(x: int) -> int:
     await asyncio.sleep(0.1)
     return x + 1
+
+
+async def wait_and_double(x: int) -> int:
+    await asyncio.sleep(0.1)
+    return x * 2
 
 
 def uppercase(s: str) -> str:

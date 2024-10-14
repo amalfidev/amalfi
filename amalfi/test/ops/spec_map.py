@@ -3,21 +3,21 @@ import pytest
 from amalfi.ops import amap, filter_, map_
 from amalfi.pipeline import apipe, pipe
 
-from ..stub import multiply_by_two, wait_and_emphasize
+from ..stub import double, wait_and_emphasize
 
 
 class TestMap:
     def test_map(self):
-        mapped = map_(multiply_by_two)([1, 2, 3])
+        mapped = map_(double)([1, 2, 3])
         assert list(mapped) == [2, 4, 6]
 
     def test_map_in_pipeline(self):
-        pipeline = pipe([1, 2, 3]) | map_(multiply_by_two) | sum
+        pipeline = pipe([1, 2, 3]) | map_(double) | sum
         assert pipeline.run() == 12
 
     @pytest.mark.anyio
     async def test_in_async_pipeline(self):
-        pipeline = apipe([1, 2, 3]) | map_(multiply_by_two) | sum
+        pipeline = apipe([1, 2, 3]) | map_(double) | sum
         assert await pipeline.run() == 12
 
 

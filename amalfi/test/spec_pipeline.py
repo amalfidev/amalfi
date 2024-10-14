@@ -4,8 +4,8 @@ from amalfi.pipeline import AsyncPipeline, Pipeline, apipe, pipe
 
 from .stub import (
     add_one,
+    double,
     greet,
-    multiply_by_two,
     uppercase,
     wait_and_add_one,
     wait_and_emphasize,
@@ -21,7 +21,7 @@ class TestPipeline:
         result = (
             pipe(1)
             .step(add_one)  # 2
-            .step(multiply_by_two)  # 4
+            .step(double)  # 4
             .step(lambda x: x + 1)  # 5
             .step(str)  # "5"
             | uppercase  # "5"
@@ -33,7 +33,7 @@ class TestPipeline:
         assert result == "2"
 
     def test_with_input(self):
-        pipeline = pipe(1) | add_one | multiply_by_two
+        pipeline = pipe(1) | add_one | double
         pipeline = pipeline.with_input(2)
         assert pipeline.input == 2
         assert pipeline() == 6
@@ -42,7 +42,7 @@ class TestPipeline:
 
     def test_concat(self):
         pipeline1 = pipe(1) | add_one
-        pipeline2 = pipe(0) | multiply_by_two
+        pipeline2 = pipe(0) | double
         pipeline = pipeline1 > pipeline2
         assert pipeline() == 4
 
@@ -99,7 +99,7 @@ class TestAsyncPipeline:
     @pytest.mark.anyio
     async def test_concat(self):
         pipeline1 = apipe(1) | wait_and_add_one
-        pipeline2 = apipe(2) | multiply_by_two | wait_and_add_one
+        pipeline2 = apipe(2) | double | wait_and_add_one
         pipeline = pipeline1 > pipeline2
         assert await pipeline() == 5
 
