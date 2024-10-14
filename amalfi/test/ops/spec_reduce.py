@@ -4,7 +4,7 @@ import pytest
 
 from amalfi import VFn
 from amalfi.ops import areduce, reduce_
-from amalfi.pipeline import Pipeline
+from amalfi.pipeline import apipe, pipe
 
 add: VFn[[int, int], int] = lambda x, y: x + y  # noqa: E731
 
@@ -20,10 +20,10 @@ class TestReduce:
         assert sum_([1, 2, 3, 4]) == 10
 
     def test_reduce_in_pipeline(self):
-        pipeline = Pipeline.pipe([1, 2, 3, 4]) | reduce_(add, 0)
+        pipeline = pipe([1, 2, 3, 4]) | reduce_(add, 0)
         assert pipeline.run() == 10
 
     @pytest.mark.anyio
     async def test_areduce(self):
-        pipeline = Pipeline.apipe([1, 2, 3, 4]) | areduce(wait_and_add, 0)
+        pipeline = apipe([1, 2, 3, 4]) | areduce(wait_and_add, 0)
         assert await pipeline.run() == 10

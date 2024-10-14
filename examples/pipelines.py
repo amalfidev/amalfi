@@ -1,6 +1,6 @@
 import asyncio
 
-from amalfi.pipeline import AsyncPipeline, Pipeline
+from amalfi.pipeline import apipe, pipe
 
 
 def add_one(x: int) -> int:
@@ -21,12 +21,12 @@ async def emphasize(s: str) -> str:
 
 
 def main():
-    pipeline = Pipeline.pipe(1) | add_one | multiply_by_two
+    pipeline = pipe(1) | add_one | multiply_by_two
     print(pipeline())
 
-    async_pipeline = AsyncPipeline.pipe("Alice") | greet | emphasize
+    apipeline = apipe("Alice") | greet | emphasize
 
-    result = asyncio.run(async_pipeline())
+    result = asyncio.run(apipeline())
     print(result)
 
 

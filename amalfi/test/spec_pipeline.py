@@ -1,6 +1,6 @@
 import pytest
 
-from amalfi.pipeline import AsyncPipeline, Pipeline
+from amalfi.pipeline import AsyncPipeline, Pipeline, apipe, pipe
 
 from .stub import (
     add_one,
@@ -14,12 +14,12 @@ from .stub import (
 
 class TestPipeline:
     def test_pipe(self):
-        result = Pipeline.pipe(1).run()
+        result = Pipeline(1).run()
         assert result == 1
 
     def test_composed_pipe(self):
         result = (
-            Pipeline.pipe(1)
+            pipe(1)
             .step(add_one)  # 2
             .step(multiply_by_two)  # 4
             .step(lambda x: x + 1)  # 5
@@ -32,26 +32,35 @@ class TestPipeline:
 
         assert result == "2"
 
-    def test_change_input(self):
-        pipeline = Pipeline.pipe(1) | add_one | multiply_by_two
-        pipeline.input = 2
+    def test_with_input(self):
+        pipeline = pipe(1) | add_one | multiply_by_two
+        pipeline = pipeline.with_input(2)
         assert pipeline.input == 2
         assert pipeline() == 6
 
         assert pipeline.with_input(3).run() == 8
 
     def test_concat(self):
-        pipeline1 = Pipeline.pipe(1) | add_one
-        pipeline2 = Pipeline.pipe(0) | multiply_by_two
+        pipeline1 = pipe(1) | add_one
+        pipeline2 = pipe(0) | multiply_by_two
         pipeline = pipeline1 > pipeline2
         assert pipeline() == 4
+
+    @pytest.mark.anyio
+    async def test_to_async(self):
+        pipeline = pipe(1) | add_one
+        apipeline = pipeline.to_async() | wait_and_add_one
+        assert await apipeline() == 3
+
+        concat = pipeline.to_async().with_input(5) > apipeline
+        assert await concat() == 8
 
 
 class TestAsyncPipeline:
     @pytest.mark.anyio
     async def test_pipe(self):
         pipeline = (
-            AsyncPipeline.pipe("Alice")
+            AsyncPipeline("Alice")
             .step(greet)  # "Hello, Alice"
             .step(wait_and_emphasize)  # "HELLO, ALICE!" (0.1s) async
             .step(len)  # 13
@@ -64,7 +73,7 @@ class TestAsyncPipeline:
         assert await pipeline() == 3
 
         result = await (
-            AsyncPipeline.pipe("Alice")
+            apipe("Alice")
             .step(greet)
             .step(wait_and_emphasize)  # async
             .step(len)
@@ -76,7 +85,7 @@ class TestAsyncPipeline:
         assert result == 3
 
         result = await (
-            Pipeline.apipe("Alice")
+            apipe("Alice")
             | greet
             | wait_and_emphasize  # async
             | len
@@ -89,25 +98,16 @@ class TestAsyncPipeline:
 
     @pytest.mark.anyio
     async def test_concat(self):
-        pipeline1 = AsyncPipeline.pipe(1) | wait_and_add_one
-        pipeline2 = AsyncPipeline.pipe(2) | multiply_by_two | wait_and_add_one
+        pipeline1 = apipe(1) | wait_and_add_one
+        pipeline2 = apipe(2) | multiply_by_two | wait_and_add_one
         pipeline = pipeline1 > pipeline2
         assert await pipeline() == 5
 
     @pytest.mark.anyio
-    async def test_change_input(self):
-        pipeline = AsyncPipeline.pipe("Alice") | greet | wait_and_emphasize
-        pipeline.input = "Bob"
+    async def test_with_input(self):
+        pipeline = apipe("Alice") | greet | wait_and_emphasize
+        pipeline = pipeline.with_input("Bob")
 
         assert pipeline.input == "Bob"
         assert await pipeline() == "HELLO, BOB!"
         assert await pipeline.with_input("Charlie").run() == "HELLO, CHARLIE!"
-
-    @pytest.mark.anyio
-    async def test_from_sync(self):
-        pipeline = Pipeline.pipe(1) | add_one
-        async_pipeline = AsyncPipeline.from_sync(pipeline)
-        assert await async_pipeline() == 2
-
-        concat = AsyncPipeline.from_sync(pipeline).with_input(5) > async_pipeline
-        assert await concat() == 7

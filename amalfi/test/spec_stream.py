@@ -4,9 +4,11 @@ from typing import AsyncIterable, Iterable
 import pytest
 
 from amalfi.ops import map_
+from amalfi.ops.map import amap
+from amalfi.pipeline import AsyncPipeline, Pipeline, apipe, pipe
 from amalfi.stream import AsyncStream, Stream, astream, stream
 
-from .stub import add_one, ayield_range, multiply_by_two, yield_range
+from .stub import add_one, ayield_range, multiply_by_two, wait_and_add_one, yield_range
 
 
 @pytest.fixture
@@ -34,6 +36,17 @@ class TestStream:
         assert isinstance(async_stream, AsyncStream)
         assert [i async for i in async_stream] == [1, 2, 3]
 
+    def test_to_pipe(self, input: Iterable[int]):
+        pipeline = stream(input).to_pipe() | map_(add_one) | sum
+        assert isinstance(pipeline, Pipeline)
+        assert pipeline.run() == 9
+
+    @pytest.mark.anyio
+    async def test_to_apipe(self, input: Iterable[int]):
+        apipeline = stream(input).to_apipe() | amap(wait_and_add_one) | sum
+        assert isinstance(apipeline, AsyncPipeline)
+        assert await apipeline.run() == 9
+
     class TestStringAndBytes:
         def test_with_strings(self):
             chars = stream("lorem").collect()
@@ -43,17 +56,9 @@ class TestStream:
             words = stream(["lorem", "ipsum"])
             assert words.collect() == ["lorem", "ipsum"]
 
-        def test_from_str(self):
-            s = stream.from_str("lorem ipsum dolor sit amet")
-            assert list(s) == ["lorem ipsum dolor sit amet"]
-
         def test_with_bytes(self):
             byte_stream = stream(b"lorem")
             assert list(byte_stream) == [108, 111, 114, 101, 109]
-
-        def test_from_bytes(self):
-            s = stream.from_bytes(b"lorem ipsum dolor sit amet")
-            assert list(s) == [b"lorem ipsum dolor sit amet"]
 
         def test_from_bytes_iterable(self):
             bytes = stream([b"lorem", b"ipsum"])
@@ -75,6 +80,20 @@ class TestStream:
         def test_collect_into(self, into: type, expected: type):
             input = [1, 1, 2, 3]  # includes duplicates
             assert stream(input).collect(into=into) == expected
+
+        def test_collect_into_lambda(self, input: Iterable[int]):
+            result = stream(input).collect(into=lambda x: [2 * i for i in x])
+            assert result == [2, 4, 6]
+
+        def test_collect_into_pipeline(self, input: Iterable[int]):
+            result = (
+                stream(input)
+                .collect(into=pipe)
+                .step(map_(lambda x: x + 1))
+                .step(sum)
+                .run()
+            )
+            assert result == 9
 
     class TestMap:
         def test_map(self, input: Iterable[int]):
@@ -130,3 +149,12 @@ class TestAsyncStream:
         async def test_collect_into(self, ainput: AsyncIterable[int]):
             as_tuple = await astream(ainput).collect(into=tuple)
             assert as_tuple == (1, 2, 3)
+
+        @pytest.mark.anyio
+        async def test_collect_into_pipeline(self, ainput: AsyncIterable[int]):
+            result = await (
+                await astream(ainput).collect(
+                    into=lambda s: apipe(s).step(map_(lambda x: x + 1)).step(sum)
+                )
+            ).run()
+            assert result == 9

@@ -76,7 +76,7 @@ class Pipeline[I, O]:
     input: I
     fn: Fn[I, O]
 
-    def __init__(self, input: I, fn: Fn[I, O]):
+    def __init__(self, input: I, fn: Fn[I, O] = identity):
         """Initialize the `Pipeline` with an input value and a function."""
         self.input = input
         self.fn = fn
@@ -134,15 +134,14 @@ class Pipeline[I, O]:
         """
         return self.concat(other)
 
-    @classmethod
-    def pipe[T](cls, input: T) -> Pipeline[T, T]:
-        """Create a new AsyncPipeline instance with the given input."""
-        return Pipeline[T, T](input, identity)
+    def to_async(self) -> AsyncPipeline[I, O]:
+        """Convert the pipeline to an asynchronous pipeline."""
+        return AsyncPipeline(self.input, as_async(self.fn))
 
-    @classmethod
-    def apipe[T](cls, input: T) -> AsyncPipeline[T, T]:
-        """Create a new AsyncPipeline instance with the given input."""
-        return AsyncPipeline.pipe(input)
+
+def pipe[T](input: T, fn: Fn[T, T] | None = None) -> Pipeline[T, T]:
+    """Alias for the `Pipeline.pipe` class method."""
+    return Pipeline(input, fn or identity)
 
 
 class AsyncPipeline[I, O]:
@@ -189,7 +188,7 @@ class AsyncPipeline[I, O]:
     value: I
     fn: AsyncFn[I, O]
 
-    def __init__(self, input: I, fn: Fn[I, O] | AsyncFn[I, O]):
+    def __init__(self, input: I, fn: Fn[I, O] | AsyncFn[I, O] = identity):
         """
         Initialize the `AsyncPipeline` with an input value and a function.
         If the function is not async, it will be wrapped in an async wrapper in
@@ -251,16 +250,9 @@ class AsyncPipeline[I, O]:
         """
         return self.concat(other)
 
-    @classmethod
-    def pipe[T](cls, input: T) -> AsyncPipeline[T, T]:
-        """Create a new AsyncPipeline instance with the given input."""
-        return AsyncPipeline[T, T](input, as_async(identity))
 
-    @classmethod
-    def from_sync[T, U](cls, pipeline: Pipeline[T, U]) -> AsyncPipeline[T, U]:
-        """
-        Convert a synchronous pipeline to an asynchronous one,
-        using the original input value.
-        """
-
-        return AsyncPipeline(pipeline.input, as_async(pipeline.fn))
+def apipe[T](
+    input: T, fn: Fn[T, T] | AsyncFn[T, T] | None = None
+) -> AsyncPipeline[T, T]:
+    """Alias for the `AsyncPipeline` constructor."""
+    return AsyncPipeline(input, fn or identity)

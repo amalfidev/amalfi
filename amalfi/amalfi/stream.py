@@ -4,6 +4,7 @@ from itertools import islice, takewhile
 from typing import AsyncIterable, AsyncIterator, Iterable, Iterator, overload
 
 from .core import Fn, as_aiter
+from .pipeline import AsyncPipeline, Pipeline, apipe, pipe
 
 
 class Stream[I]:
@@ -20,14 +21,6 @@ class Stream[I]:
     def __repr__(self) -> str:
         return f"Stream({self._iter.__repr__()})"
 
-    @classmethod
-    def from_str(cls, value: str) -> Stream[str]:
-        return Stream([value])
-
-    @classmethod
-    def from_bytes(cls, value: bytes) -> Stream[bytes]:
-        return Stream([value])
-
     def to_async(self) -> AsyncStream[I]:
         """Convert the stream to an async stream."""
         return AsyncStream(as_aiter(self))
@@ -42,13 +35,21 @@ class Stream[I]:
     def collect[T](self, into: Fn[Iterable[I], T] | None = None) -> T | list[I]:
         """
         Execute the stream on the input and collect the results into a custom
-        collection type, which defaults to a list.
+        collector function, which defaults to a list.
         """
         if not into:
             return list(self)
         return into(self)
 
     # endregion --collect
+
+    def to_pipe(self) -> Pipeline[Iterable[I], Iterable[I]]:
+        """Convert the stream to a pipeline."""
+        return pipe(iter(self))
+
+    def to_apipe(self) -> AsyncPipeline[Iterable[I], Iterable[I]]:
+        """Convert the stream to an async pipeline."""
+        return apipe(iter(self))
 
     # region: --ops
     def map[O](self, fn: Fn[I, O]) -> Stream[O]:
@@ -77,8 +78,10 @@ class Stream[I]:
     # endregion --ops
 
 
-stream = Stream
-"""Alias for the `Stream` constructor."""
+def stream[I](input: Iterable[I]) -> Stream[I]:
+    """Alias for the `Stream` constructor."""
+    return Stream(input)
+
 
 # TODO:
 # - operators: see https://rxjs.dev/guide/operators#transformation-operators
@@ -129,7 +132,7 @@ class AsyncStream[I]:
     async def collect[T](self, into: Fn[Iterable[I], T] | None = None) -> T | list[I]:
         """
         Execute the stream on the input and collect the results into a custom
-        collection type, which defaults to a list.
+        collector function, which defaults to a list.
         """
         collected = [i async for i in self]
         return collected if not into else into(collected)
@@ -137,5 +140,6 @@ class AsyncStream[I]:
     # endregion --collect
 
 
-astream = AsyncStream
-"""Alias for the `AsyncStream` constructor."""
+def astream[I](input: AsyncIterable[I]) -> AsyncStream[I]:
+    """Alias for the `AsyncStream` constructor."""
+    return AsyncStream(input)
