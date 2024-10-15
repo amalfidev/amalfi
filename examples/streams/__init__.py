@@ -1,9 +1,9 @@
-from amalfi.stream import Stream
+from amalfi.stream import stream
 
 
 def main():
-    stream = Stream(range(10)).map(lambda x: x * 2)
-    print(stream)
+    s = stream(range(10)).map(lambda x: x * 2)
+    print(s)
 
 
 if __name__ == "__main__":

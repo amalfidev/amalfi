@@ -95,3 +95,26 @@ class TestAsyncStream:
             s = astream(ainput_with_none()).filter(None)
             assert isinstance(s, AsyncStream)
             assert await s.collect() == [1, 3]
+
+    class TestTake:
+        @pytest.mark.anyio
+        async def test_take(self, ainput: AsyncIterable[int]):
+            s = astream(ainput).take(2)
+            assert isinstance(s, AsyncStream)
+            assert await s.collect() == [1, 2]
+
+        @pytest.mark.anyio
+        async def test_take_while(self, ainput: AsyncIterable[int]):
+            s = astream(ainput).take_while(lambda x: x < 3)
+            assert isinstance(s, AsyncStream)
+            assert await s.collect() == [1, 2]
+
+        @pytest.mark.anyio
+        async def test_take_while_with_async_fn(self, ainput: AsyncIterable[int]):
+            async def is_less_than_three(x: int) -> bool:
+                await asyncio.sleep(0.001)
+                return x < 3
+
+            s = astream(ainput).take_while(is_less_than_three)
+            assert isinstance(s, AsyncStream)
+            assert await s.collect() == [1, 2]
