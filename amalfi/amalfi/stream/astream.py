@@ -208,6 +208,33 @@ class AsyncStream[I]:
 
         return AsyncStream(atake_while())
 
+    def default(self, default: I) -> AsyncStream[I]:
+        """
+        Returns a stream with the default value if the stream is empty.
+
+        Args:
+            default (I): The default value to return if the stream is empty
+
+        Returns:
+            AsyncStream[I]: a new stream with the default value if the stream is empty
+
+        Example:
+            >>> result = await astream(ayield_range(1, 4)).default(0).collect()
+            >>> assert result == [1, 2, 3]
+            >>> result = await astream(ayield_range(1, 1)).default(0).collect()
+            >>> assert result == [0]
+        """
+
+        async def adefault() -> AsyncIterator[I]:
+            is_empty = True
+            async for item in self:
+                is_empty = False
+                yield item
+            if is_empty:
+                yield default
+
+        return AsyncStream(adefault())
+
     # endregion --ops
 
 

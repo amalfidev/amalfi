@@ -128,3 +128,14 @@ class TestStream:
             )
             assert isinstance(s, Stream)
             assert s.collect() == [1, 2]
+
+    class TestDefault:
+        def test_default(self, input: Iterable[int]):
+            s = stream(input).default(0)
+            assert isinstance(s, Stream)
+            assert s.collect() == [1, 2, 3]
+
+        def test_default_empty(self):
+            s = Stream[int]([]).default(0)
+            assert isinstance(s, Stream)
+            assert s.collect() == [0]

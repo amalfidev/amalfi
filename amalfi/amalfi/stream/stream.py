@@ -175,6 +175,33 @@ class Stream[I]:
         """
         return Stream(takewhile(fn, self))
 
+    def default(self, default: I) -> Stream[I]:
+        """
+        Returns a stream with the default value if the stream is empty.
+
+        Args:
+            default (I): The default value to return if the stream is empty
+
+        Returns:
+            Stream[I]: a new stream with the default value if the stream is empty
+
+        Example:
+            >>> result = stream([1, 2, 3]).default(0).collect()
+            >>> assert result == [1, 2, 3]
+            >>> result = stream([]).default(0).collect()
+            >>> assert result == [0]
+        """
+
+        def default_gen() -> Iterator[I]:
+            stream_iter = iter(self)
+            try:
+                yield next(stream_iter)
+                yield from stream_iter
+            except StopIteration:
+                yield default
+
+        return Stream(default_gen())
+
     # endregion --ops
 
 
@@ -190,9 +217,8 @@ def stream[I](input: Iterable[I]) -> Stream[I]:
 
 # TODO:
 # - operators: see https://rxjs.dev/guide/operators#transformation-operators
-# -- gather (list, tuple, set, deque, custom fn), seq/parallel
-# -- afilter
 # -- reduce / areduce
+# -- catch_error
 # -- count
 # -- fork / afork
 # -- group_by

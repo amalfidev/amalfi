@@ -118,3 +118,16 @@ class TestAsyncStream:
             s = astream(ainput).take_while(is_less_than_three)
             assert isinstance(s, AsyncStream)
             assert await s.collect() == [1, 2]
+
+    class TestDefault:
+        @pytest.mark.anyio
+        async def test_default(self, ainput: AsyncIterable[int]):
+            s = astream(ainput).default(0)
+            assert isinstance(s, AsyncStream)
+            assert await s.collect() == [1, 2, 3]
+
+        @pytest.mark.anyio
+        async def test_default_if_empty_empty(self):
+            s = astream(ayield_range(1, 1)).default(0)
+            assert isinstance(s, AsyncStream)
+            assert await s.collect() == [0]
