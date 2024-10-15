@@ -15,12 +15,12 @@ def is_even(x: int) -> bool:
 
 
 async def wait_and_add_one(x: int) -> int:
-    await asyncio.sleep(0.1)
+    await asyncio.sleep(0.001)
     return x + 1
 
 
 async def wait_and_double(x: int) -> int:
-    await asyncio.sleep(0.1)
+    await asyncio.sleep(0.001)
     return x * 2
 
 
@@ -33,7 +33,7 @@ def greet(name: str) -> str:
 
 
 async def wait_and_emphasize(s: str) -> str:
-    await asyncio.sleep(0.1)
+    await asyncio.sleep(0.001)
     return s.upper() + "!"
 
 
@@ -44,7 +44,7 @@ def yield_items[T](iterable: Iterable[T]) -> Generator[T, None, None]:
 
 async def wait_and_yield[T](iterable: Iterable[T]) -> AsyncIterator[T]:
     for item in iterable:
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.001)
         yield item
 
 
@@ -55,5 +55,5 @@ def yield_range(start: int, end: int) -> Generator[int, None, None]:
 
 async def ayield_range(start: int, end: int) -> AsyncIterator[int]:
     for i in range(start, end):
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.001)
         yield i

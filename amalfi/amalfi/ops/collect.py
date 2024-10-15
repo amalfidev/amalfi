@@ -55,7 +55,7 @@ def acollect[I, O](fn: Fn[I, AsyncIterator[O]]) -> AsyncFn[I, list[O]]:
     Examples:
         >>> async def double(x):
         ...     for i in x:
-        ...         await asyncio.sleep(0.01)
+        ...         await asyncio.sleep(0.001)
         ...         yield i * 2
         >>> acollect_double = acollect_(double)
         >>> await acollect_double([1, 2, 3])

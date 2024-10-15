@@ -10,7 +10,7 @@ add: VFn[[int, int], int] = lambda x, y: x + y  # noqa: E731
 
 
 async def wait_and_add(x: int, y: int) -> int:
-    await asyncio.sleep(0.01)
+    await asyncio.sleep(0.001)
     return x + y
 
 

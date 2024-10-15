@@ -56,7 +56,7 @@ def areduce[I, O](fn: AsyncVFn[[O, I], O], initial: O) -> AsyncFn[Iterable[I], O
 
     Examples:
         >>> async def wait_and_add(x: int, y: int) -> int:
-        ...     await asyncio.sleep(0.01)
+        ...     await asyncio.sleep(0.001)
         ...     return x + y
         >>> asum = areduce(wait_and_add, 0)
         >>> await asum([1, 2, 3, 4])

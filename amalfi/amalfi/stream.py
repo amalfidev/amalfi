@@ -130,13 +130,14 @@ class Stream[I]:
 
         return Stream(map(fn, self))
 
-    def filter(self, fn: Fn[I, bool]) -> Stream[I]:
+    def filter(self, fn: Fn[I, bool] | None) -> Stream[I]:
         """
         Adds a filtering step to the stream, returning a new stream of the
         filtered values.
 
         Args:
-            fn (Fn[I, bool]): A synchronous filtering function
+            fn (Fn[I, bool] | None): A synchronous filtering function. If `None` is
+            passed, the stream will be filtered to exclude `None` values.
 
         Returns:
             Stream[I]: a new stream of the filtered values
@@ -144,6 +145,8 @@ class Stream[I]:
         Example:
             >>> result = stream([1, 2, 3]).filter(lambda x: x % 2 == 0).collect()
             >>> assert result == [2]
+            >>> result = stream([1, None, 3]).filter(None).collect()
+            >>> assert result == [1, 3]
         """
         return Stream(filter(fn, self))
 
@@ -329,6 +332,36 @@ class AsyncStream[I]:
                 yield await as_async(fn)(i)
 
         return AsyncStream(amap())
+
+    def filter(self, fn: Fn[I, bool] | AsyncFn[I, bool] | None) -> AsyncStream[I]:
+        """
+        Adds a filtering step to the stream, returning a new stream of the
+        filtered values.
+
+        Args:
+            fn (Fn[I, bool] | AsyncFn[I, bool] | None): A synchronous or asynchronous
+            filtering function. If `None` is passed, the stream will be filtered to
+            exclude `None` values.
+
+        Returns:
+            AsyncStream[I]: a new stream of the filtered values
+
+        Example:
+            >>> result = await astream([1, 2, 3]).filter(lambda x: x % 2 == 0).collect()
+            >>> assert result == [2]
+            >>> result = await astream([1, None, 3]).filter(None).collect()
+            >>> assert result == [1, 3]
+        """
+
+        async def afilter():
+            async for i in self:
+                if fn is None:
+                    if i is not None:
+                        yield i
+                elif await as_async(fn)(i):
+                    yield i
+
+        return AsyncStream(afilter())
 
     # endregion --ops
 

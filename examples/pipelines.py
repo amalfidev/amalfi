@@ -16,7 +16,7 @@ def greet(name: str) -> str:
 
 
 async def emphasize(s: str) -> str:
-    await asyncio.sleep(0.1)
+    await asyncio.sleep(0.001)
     return s.upper() + "!"
 
 

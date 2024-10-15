@@ -46,7 +46,7 @@ class User:
     name: str
 
 async def fetch_user(user_id: int) -> User:
-    await asyncio.sleep(0.1) # Simulate async user fetching
+    await asyncio.sleep(0.001) # Simulate async user fetching
     return User(id=user_id, name="John Doe")
 
 def process_user(user: User) -> User:
@@ -54,7 +54,7 @@ def process_user(user: User) -> User:
     return User(**(asdict(user) | updated_fields))
 
 async def save_user(user: User) -> User:
-    await asyncio.sleep(0.1) # Simulate async user saving
+    await asyncio.sleep(0.001) # Simulate async user saving
     return user
 
 pipeline = (
@@ -78,7 +78,7 @@ from amalfi.stream import astream
 
 async def stream_users():
     for i in range(20):
-        await asyncio.sleep(0.1) # Simulate async users fetching
+        await asyncio.sleep(0.001) # Simulate async users fetching
         yield User(id=i, name=f"User {i}")
 
 updated_users = (

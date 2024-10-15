@@ -76,7 +76,7 @@ def afilter[T, S](
 
     Examples:
         >>> async def wait_and_check_even(x: int) -> bool:
-        ...     await asyncio.sleep(0.01)
+        ...     await asyncio.sleep(0.001)
         ...     return x % 2 == 0
         >>> afilter_even = afilter_(wait_and_check_even)
         >>> list(await afilter_even([1, 2, 3, 4]))

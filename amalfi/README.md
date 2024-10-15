@@ -88,7 +88,7 @@ result = pipe([1, 2, 3]) | map_(add_one) | sum
 print(result) # 9
 
 async def wait_and_multiply_by_two(x: int) -> int:
-    await asyncio.sleep(0.1) # Simulate some async work
+    await asyncio.sleep(0.001) # Simulate some async work
     return x * 2
 
 result = apipe([1, 2, 3]) | amap(wait_and_multiply_by_two) | sum
@@ -112,7 +112,7 @@ pipeline = pipe([1, 2, 3, 4]) | filter_(is_even) | sum
 result = pipeline.run() # Output: 6
 
 async def async_is_even(x: int) -> bool:
-    await asyncio.sleep(0.1) # Simulate some async work
+    await asyncio.sleep(0.001) # Simulate some async work
     return x % 2 == 0
 
 result = await (
@@ -135,7 +135,7 @@ print(result) # Output: 10
 
 
 async def async_add(x: int, y: int) -> int:
-    await asyncio.sleep(0.1)
+    await asyncio.sleep(0.001)
     return x + y
 
 result = await apipe([1, 2, 3, 4]).step(areduce(async_add)).run()
@@ -159,7 +159,7 @@ print(pipeline.run()) # Output: 6
 
 async def async_yield_items(xs: Iterable[int]) -> AsyncIterator[int]:
     for x in xs:
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.001)
         yield x
 
 pipeline = apipe([1, 2, 3]) | acollect(async_yield_items) | sum

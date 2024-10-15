@@ -72,14 +72,14 @@ def amap[I, O](
 
     Example:
         >>> async def async_double(x):
-        ...     await asyncio.sleep(0.1)
+        ...     await asyncio.sleep(0.001)
         ...     return x * 2
         >>> amap_double = amap(async_double)
         >>> await amap_double([1, 2, 3])
         [2, 4, 6]
 
         >>> async def async_risky(x):
-        ...     await asyncio.sleep(0.1)
+        ...     await asyncio.sleep(0.001)
         ...     if x == 2:
         ...         raise ValueError("Two is not allowed")
         ...     return x * 2

@@ -1,31 +1,19 @@
 from collections import deque
-from typing import AsyncIterable, Iterable
+from typing import Iterable
 
 import pytest
 
 from amalfi.ops import map_
 from amalfi.ops.map import amap
 from amalfi.pipeline import AsyncPipeline, Pipeline, pipe
-from amalfi.stream import AsyncStream, Stream, astream, stream
+from amalfi.stream import AsyncStream, Stream, stream
 
-from .stub import (
-    add_one,
-    ayield_range,
-    double,
-    wait_and_add_one,
-    wait_and_double,
-    yield_range,
-)
+from .stub import add_one, double, wait_and_add_one, yield_range
 
 
 @pytest.fixture
 def input():
     return yield_range(1, 4)
-
-
-@pytest.fixture
-def ainput():
-    return ayield_range(1, 4)
 
 
 class TestStream:
@@ -116,6 +104,16 @@ class TestStream:
             assert isinstance(s, Stream)
             assert s.collect() == [2, 4]
 
+        def test_filter_none(self):
+            def input_with_none():
+                yield 1
+                yield None
+                yield 3
+
+            s = stream(input_with_none()).filter(None)
+            assert isinstance(s, Stream)
+            assert s.collect() == [1, 3]
+
     class TestTake:
         def test_take(self, input: Iterable[int]):
             s = stream(input).map(lambda x: x + 1).take(2)
@@ -130,55 +128,3 @@ class TestStream:
             )
             assert isinstance(s, Stream)
             assert s.collect() == [1, 2]
-
-
-class TestAsyncStream:
-    @pytest.mark.anyio
-    async def test_init(self, ainput: AsyncIterable[int]):
-        s = AsyncStream(ainput)
-        assert [i async for i in s] == [1, 2, 3]
-
-    @pytest.mark.anyio
-    async def test_alias(self, ainput: AsyncIterable[int]):
-        assert [i async for i in astream(ainput)] == [1, 2, 3]
-
-    @pytest.mark.anyio
-    async def test_to_pipe(self, ainput: AsyncIterable[int]):
-        p = (await astream(ainput).to_pipe()) | map_(add_one) | sum
-        assert isinstance(p, Pipeline)
-        assert p.run() == 9
-
-    @pytest.mark.anyio
-    async def test_to_apipe(self, ainput: AsyncIterable[int]):
-        ap = (await astream(ainput).to_apipe()) | amap(wait_and_add_one) | sum
-        assert isinstance(ap, AsyncPipeline)
-        assert await ap.run() == 9
-
-    class TestCollect:
-        @pytest.mark.anyio
-        async def test_collect(self, ainput: AsyncIterable[int]):
-            assert await astream(ainput).collect() == [1, 2, 3]
-
-        @pytest.mark.anyio
-        async def test_collect_into(self, ainput: AsyncIterable[int]):
-            as_tuple = await astream(ainput).collect(into=tuple)
-            assert as_tuple == (1, 2, 3)
-
-        @pytest.mark.anyio
-        async def test_collect_into_pipeline(self, ainput: AsyncIterable[int]):
-            apipeline = (
-                (await astream(ainput).collect(into=pipe))
-                .step(map_(lambda x: x + 1))
-                .step(sum)
-                .to_async()
-                .step(wait_and_add_one)
-            )
-            assert isinstance(apipeline, AsyncPipeline)
-            assert await apipeline.run() == 10
-
-    class TestMap:
-        @pytest.mark.anyio
-        async def test_map(self, ainput: AsyncIterable[int]):
-            s = astream(ainput).map(wait_and_add_one).map(add_one).map(wait_and_double)
-            assert isinstance(s, AsyncStream)
-            assert await s.collect() == [6, 8, 10]

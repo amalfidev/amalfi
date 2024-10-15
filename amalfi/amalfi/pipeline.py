@@ -178,7 +178,7 @@ class AsyncPipeline[I, O]:
         return x + 1
 
     async def multiply_by_two(x: int) -> int:
-        await asyncio.sleep(0.1)  # Simulate async operation
+        await asyncio.sleep(0.001)  # Simulate async operation
         return x * 2
 
     # Create an async pipeline that adds one and then multiplies by two
