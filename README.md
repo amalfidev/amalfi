@@ -34,8 +34,10 @@ poetry install amalfi
 ## Quickstart
 
 ```python
+### Pipelining example
 import asyncio
-from amalfi.pipeline import Pipeline
+import json
+from amalfi.pipeline import apipe
 from dataclasses import dataclass, asdict
 
 @dataclass
@@ -44,7 +46,7 @@ class User:
     name: str
 
 async def fetch_user(user_id: int) -> User:
-    await asyncio.sleep(0.1)
+    await asyncio.sleep(0.1) # Simulate async user fetching
     return User(id=user_id, name="John Doe")
 
 def process_user(user: User) -> User:
@@ -52,23 +54,55 @@ def process_user(user: User) -> User:
     return User(**(asdict(user) | updated_fields))
 
 async def save_user(user: User) -> User:
-    await asyncio.sleep(0.1)
-    print(f"Saving user: {user.id}")
+    await asyncio.sleep(0.1) # Simulate async user saving
     return user
 
-pipeline = await (
-    Pipeline.apipe(3)
+pipeline = (
+    apipe(3)
     | fetch_user
+    | tap(lambda u: print(f"Processing user: {u.id}"))
     | process_user
+    | tap(lambda u: print(f"Saving user: {u.id}"))
     | save_user
 )
 
-user = await pipeline.run()
-print(json.dumps(asdict(user)))
-# Output after ~0.2s:
+updated_user = await pipeline.run()
+print(json.dumps(asdict(updated_user)))
+# Output after ~0.3s:
+# > Processing user: 3
 # > Saving user: 3
 # > {"id":3,"name":"John Doe Doe"}
+
+### Streaming example
+from amalfi.stream import astream
+
+async def stream_users():
+    for i in range(20):
+        await asyncio.sleep(0.1) # Simulate async users fetching
+        yield User(id=i, name=f"User {i}")
+
+updated_users = (
+   await astream(stream_users()) 
+      .filter(lambda u: u.id % 2 == 0) 
+      .tap(lambda u: print(f"Processing user: {u.id}")) 
+      .map(process_user) 
+      .tap(lambda u: print(f"Saving user: {u.id}")) 
+      .map(save_user) 
+      .collect()
+)
+
+print(f"Finished processing: updated {len(updated_users)} users")
+
+# Output:
+# > Processing user: 0
+# > Saving user: 0
+# > Processing user: 2
+# > Saving user: 2
+# > ...
+# > Finished processing: updated 11 users
 ```
+
+
 
 ## Documentation and Usage
 See the [**amalfi package README**](amalfi/README.md) for more detailed documentation.

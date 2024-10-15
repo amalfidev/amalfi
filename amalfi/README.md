@@ -63,6 +63,109 @@ A type alias for an asynchronous function that takes an iterable of type `Iterab
   print(list(result))  # Output: [2, 3, 4] (after 1 second delay)
   ```
 
+
+## Pipelining
+
+### Pipelines
+- **Pipeline**: Chain synchronous functions using the `|` operator.
+- **AsyncPipeline**: Chain asynchronous (and synchronous) functions using the `|` operator.
+- **pipe / pipe_async**: Initialize pipelines with an input value.
+- **`|` Operator**: Use the bitwise OR operator to chain functions in a pipeline.
+- **step**: Add a function to the pipeline.
+
+## Operators
+### Mapping
+- `map_`: Apply a function over an iterable, possibly asynchronously.
+- `amap`: Async version of `map_`. Analogous to `asyncio.gather` but for pipelines.
+```python
+from amalfi import apipe, pipe
+from amalfi.ops import amap, map_
+
+def add_one(x: int) -> int:
+    return x + 1
+
+result = pipe([1, 2, 3]) | map_(add_one) | sum
+print(result) # 9
+
+async def wait_and_multiply_by_two(x: int) -> int:
+    await asyncio.sleep(0.1) # Simulate some async work
+    return x * 2
+
+result = apipe([1, 2, 3]) | amap(wait_and_multiply_by_two) | sum
+print(result) # Output: 12 (after 0.1s)
+```
+
+### Filtering
+- `afilter`: Async version of `filter_`.
+- `filter_`: Filter items in an iterable based on a predicate.
+
+Both `filter_` and `afilter` support type narrowing using `TypeGuard` predicates for improved type safety.
+
+```python
+from amalfi import apipe, pipe
+from amalfi.ops import afilter, filter_
+
+def is_even(x: int) -> bool:
+    return x % 2 == 0
+
+pipeline = pipe([1, 2, 3, 4]) | filter_(is_even) | sum
+result = pipeline.run() # Output: 6
+
+async def async_is_even(x: int) -> bool:
+    await asyncio.sleep(0.1) # Simulate some async work
+    return x % 2 == 0
+
+result = await (
+  apipe([1, 2, 3, 4])
+  | afilter(async_is_even)  # [2, 4]
+  | sum
+).run() # Output: 6 (after 0.1s)
+```
+
+### Reducing
+- `reduce_`: Reduce an iterable to a single value using a binary function.
+- `areduce`: Async version of `reduce_`. It is concurrent and will evaluate the binary function concurrently for each pair of elements in the iterable in a sequential (not parallel) manner.
+
+```python
+from amalfi import apipe, pipe
+from amalfi.ops import areduce, reduce_
+
+result = Pipeline.pipe([1, 2, 3, 4]) | reduce_(lambda x, y: x + y)
+print(result) # Output: 10
+
+
+async def async_add(x: int, y: int) -> int:
+    await asyncio.sleep(0.1)
+    return x + y
+
+result = await apipe([1, 2, 3, 4]).step(areduce(async_add)).run()
+print(result) # Output: 10 (after 0.4s = 0.1s per pair of elements)
+```
+
+### Collecting
+- `collect`: Collect all items from an iterable into a list. Useful for turning a generator into a list inside a pipeline.
+- `acollect`: Async version of `collect`. Useful for turning an async generator into a list inside an async pipeline.
+
+```python
+from amalfi import apipe, pipe
+from amalfi.ops import collect, acollect
+
+def yield_items(xs: Iterable[int]) -> Generator[int, None, None]: # dummy generator
+    for x in xs:
+        yield x
+
+pipeline = pipe([1, 2, 3]) | collect(yield_items) | sum
+print(pipeline.run()) # Output: 6
+
+async def async_yield_items(xs: Iterable[int]) -> AsyncIterator[int]:
+    for x in xs:
+        await asyncio.sleep(0.1)
+        yield x
+
+pipeline = apipe([1, 2, 3]) | acollect(async_yield_items) | sum
+print(await pipeline.run()) # Output: 6 (after 0.3s)
+```
+
 ## Utilities
 The following utilities are useful to work with functions and are used throughout the library as well. They can become handy when working with the library in a type-safe manner.
 
@@ -108,104 +211,6 @@ Useful for working with sync functions in an async context, or for converting sy
   print(result)  # Output: 2
   ```
 
-## Pipelining
-
-### Pipelines
-- **Pipeline**: Chain synchronous functions using the `|` operator.
-- **AsyncPipeline**: Chain asynchronous (and synchronous) functions using the `|` operator.
-- **pipe / pipe_async**: Initialize pipelines with an input value.
-- **`|` Operator**: Use the bitwise OR operator to chain functions in a pipeline.
-- **step**: Add a function to the pipeline.
-
-## Operators
-### Mapping
-- `map_`: Apply a function over an iterable, possibly asynchronously.
-- `amap`: Async version of `map_`. Analogous to `asyncio.gather` but for pipelines.
-```python
-from amalfi.ops import amap, map_
-
-def add_one(x: int) -> int:
-    return x + 1
-
-result = Pipeline.pipe([1, 2, 3]) | map_(add_one) | sum
-print(result) # 9
-
-async def wait_and_multiply_by_two(x: int) -> int:
-    await asyncio.sleep(0.1) # Simulate some async work
-    return x * 2
-
-result = AsyncPipeline.pipe([1, 2, 3]) | amap(wait_and_multiply_by_two) | sum
-print(result) # Output: 12 (after 0.1s)
-```
-
-### Filtering
-- `afilter`: Async version of `filter_`.
-- `filter_`: Filter items in an iterable based on a predicate.
-
-Both `filter_` and `afilter` support type narrowing using `TypeGuard` predicates for improved type safety.
-
-```python
-from amalfi.ops import afilter, filter_
-
-def is_even(x: int) -> bool:
-    return x % 2 == 0
-
-pipeline = Pipeline.pipe([1, 2, 3, 4]) | filter_(is_even) | sum
-result = pipeline.run() # Output: 6
-
-async def async_is_even(x: int) -> bool:
-    await asyncio.sleep(0.1) # Simulate some async work
-    return x % 2 == 0
-
-result = await (
-  AsyncPipeline.pipe([1, 2, 3, 4])
-  | afilter(async_is_even)  # [2, 4]
-  | sum
-).run() # Output: 6 (after 0.1s)
-```
-
-### Reducing
-- `reduce_`: Reduce an iterable to a single value using a binary function.
-- `areduce`: Async version of `reduce_`. It is concurrent and will evaluate the binary function concurrently for each pair of elements in the iterable in a sequential (not parallel) manner.
-
-```python
-from amalfi.ops import areduce, reduce_
-
-result = Pipeline.pipe([1, 2, 3, 4]) | reduce_(lambda x, y: x + y)
-print(result) # Output: 10
-
-
-async def async_add(x: int, y: int) -> int:
-    await asyncio.sleep(0.1)
-    return x + y
-
-result = await (
-  AsyncPipeline.pipe([1, 2, 3, 4]) | areduce(async_add)
-).run()
-print(result) # Output: 10 (after 0.4s = 0.1s per pair of elements)
-```
-
-### Collecting
-- `collect`: Collect all items from an iterable into a list. Useful for turning a generator into a list inside a pipeline.
-- `acollect`: Async version of `collect`. Useful for turning an async generator into a list inside an async pipeline.
-
-```python
-from amalfi.ops import collect, acollect
-def yield_items(xs: Iterable[int]) -> Generator[int, None, None]: # dummy generator
-    for x in xs:
-        yield x
-
-pipeline = Pipeline.pipe([1, 2, 3]) | collect(yield_items) | sum
-print(pipeline.run()) # Output: 6
-
-async def async_yield_items(xs: Iterable[int]) -> AsyncIterator[int]:
-    for x in xs:
-        await asyncio.sleep(0.1)
-        yield x
-
-pipeline = AsyncPipeline.pipe([1, 2, 3]) | acollect(async_yield_items) | sum
-print(await pipeline.run()) # Output: 6 (after 0.3s)
-```
 
 ### TODO:
 - **fork**: Split the data flow to multiple functions.

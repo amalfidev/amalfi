@@ -5,7 +5,7 @@ from .core import AsyncFn, Fn, as_async, identity
 
 class Pipeline[I, O]:
     """
-    A generic pipeline class for chaining callables using the `|` operator.
+    A generic pipeline class for chaining callables.
 
     This class allows the creation of pipelines where each step is a callable
     function. The steps are composed together, enabling a fluent interface
@@ -24,7 +24,7 @@ class Pipeline[I, O]:
     Basic usage with integer transformations:
 
     ```python
-    from amalfi import pipeline
+    from amalfi.pipeline import pipe, Pipeline
 
     def add_one(x: int) -> int:
         return x + 1
@@ -34,6 +34,10 @@ class Pipeline[I, O]:
 
     # Create a pipeline that adds one and then multiplies by two
     my_pipeline = Pipeline.pipe(3) | add_one | multiply_by_two
+    # or
+    my_pipeline = pipe(3) | add_one | multiply_by_two
+    # or
+    my_pipeline = pipe(3).step(add_one).step(multiply_by_two)
 
     result = my_pipeline()  # (3 + 1) * 2 = 8
     print(result)  # Output: 8
@@ -42,7 +46,7 @@ class Pipeline[I, O]:
     Chaining multiple functions with different return types:
 
     ```python
-    from amalfi import pipeline
+    from amalfi.pipeline import pipe
 
     def square(x: int) -> int:
         return x * x
@@ -54,7 +58,7 @@ class Pipeline[I, O]:
         return s.upper() + "!"
 
     # Create a pipeline that squares a number, converts to string, and shouts it
-    my_pipeline = Pipeline.pipe(5) | square | to_string | shout
+    my_pipeline = pipe(5) | square | to_string | shout
 
     result = my_pipeline()  # Square 5, convert, and shout
     print(result)  # Output: "RESULT IS 25!"
@@ -63,10 +67,10 @@ class Pipeline[I, O]:
     Using built-in functions within the pipeline:
 
     ```python
-    from amalfi import pipeline
+    from amalfi.pipeline import pipe
 
     # Create a pipeline that converts to string and gets the length
-    my_pipeline = Pipeline.pipe(12345) | str | len
+    my_pipeline = pipe(12345) | str | len
 
     result = my_pipeline()
     print(result)  # Output: 5
@@ -167,7 +171,7 @@ class AsyncPipeline[I, O]:
     Basic usage with mixed sync and async functions:
 
     ```python
-    from amalfi import async_pipeline
+    from amalfi.pipeline import apipe, AsyncPipeline
     import asyncio
 
     def add_one(x: int) -> int:
@@ -178,7 +182,9 @@ class AsyncPipeline[I, O]:
         return x * 2
 
     # Create an async pipeline that adds one and then multiplies by two
-    my_pipeline = AsyncPipeline.pipe(3) | add_one | multiply_by_two
+    my_pipeline = apipe(3) | add_one | multiply_by_two
+    # or
+    my_pipeline = AsyncPipeline(3, add_one | multiply_by_two)
 
     result = asyncio.run(my_pipeline())  # (3 + 1) * 2 = 8
     print(result)  # Output: 8
