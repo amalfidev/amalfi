@@ -100,11 +100,12 @@ class Stream[I]:
         Returns:
             T | list[I]: The collected result of the stream.
 
-        Example:
-            >>> result = stream([1, 2, 3, 4, 5]).map(lambda x: x + 1).collect()
-            >>> assert result == [2, 3, 4, 5, 6]
-            >>> result = stream([1, 2, 3]).map(lambda x: x + 1).collect(into=tuple)
-            >>> assert result == (2, 3, 4)
+        Examples
+        --------
+        >>> result = stream([1, 2, 3, 4, 5]).map(lambda x: x + 1).collect()
+        [2, 3, 4, 5, 6]
+        >>> result = stream([1, 2, 3]).map(lambda x: x + 1).collect(into=tuple)
+        (2, 3, 4)
         """
         if not into:
             return list(self)
@@ -124,9 +125,10 @@ class Stream[I]:
         Returns:
             Stream[O]: a new stream of the mapped values
 
-        Example:
-            >>> result = stream([1, 2, 3]).map(lambda x: x + 1).collect()
-            >>> assert result == [2, 3, 4]
+        Examples
+        --------
+        >>> result = stream([1, 2, 3]).map(lambda x: x + 1).collect()
+        >>> assert result == [2, 3, 4]
         """
 
         return Stream(map(fn, self))
@@ -143,11 +145,12 @@ class Stream[I]:
         Returns:
             Stream[I]: a new stream of the filtered values
 
-        Example:
-            >>> result = stream([1, 2, 3]).filter(lambda x: x % 2 == 0).collect()
-            >>> assert result == [2]
-            >>> result = stream([1, None, 3]).filter(None).collect()
-            >>> assert result == [1, 3]
+        Examples
+        --------
+        >>> result = stream([1, 2, 3]).filter(lambda x: x % 2 == 0).collect()
+        >>> assert result == [2]
+        >>> result = stream([1, None, 3]).filter(None).collect()
+        >>> assert result == [1, 3]
         """
         return Stream(filter(fn, self))
 
@@ -185,11 +188,12 @@ class Stream[I]:
         Returns:
             Stream[I]: a new stream with the default value if the stream is empty
 
-        Example:
-            >>> result = stream([1, 2, 3]).default(0).collect()
-            >>> assert result == [1, 2, 3]
-            >>> result = stream([]).default(0).collect()
-            >>> assert result == [0]
+        Examples
+        --------
+        >>> result = stream([1, 2, 3]).default(0).collect()
+        >>> assert result == [1, 2, 3]
+        >>> result = stream([]).default(0).collect()
+        >>> assert result == [0]
         """
 
         def default_gen() -> Iterator[I]:
@@ -208,9 +212,10 @@ class Stream[I]:
 def stream[I](input: Iterable[I]) -> Stream[I]:
     """Alias for the `Stream` constructor.
 
-    Example:
-        >>> result = stream([1, 2, 3]).map(lambda x: x + 1).collect()
-        >>> assert result == [2, 3, 4]
+    Examples
+    --------
+    >>> result = stream([1, 2, 3]).map(lambda x: x + 1).collect()
+    >>> assert result == [2, 3, 4]
     """
     return Stream(input)
 

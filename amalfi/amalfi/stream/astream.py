@@ -23,7 +23,8 @@ class AsyncStream[I]:
     Attributes:
     - `input`: The input iterable to the stream, to be transformed by the functions.
 
-    Examples:
+    Examples
+    --------
 
     Basic usage with integer transformations:
 
@@ -71,34 +72,35 @@ class AsyncStream[I]:
 
     async def collect[T](self, into: Fn[Iterable[I], T] | None = None) -> T | list[I]:
         """
-        Execute the stream on the input and collect the results into a custom
-        collector function, which defaults to a list.
+            Execute the stream on the input and collect the results into a custom
+            collector function, which defaults to a list.
 
-        This method will consume the stream and return the collected result.
-        If the stream is infinite, this method will never return.
+            This method will consume the stream and return the collected result.
+            If the stream is infinite, this method will never return.
 
-        A custom collector can be passed. It should be a function that takes an
-        iterable and returns the desired type `T`. It defaults to a list.
+            A custom collector can be passed. It should be a function that takes an
+            iterable and returns the desired type `T`. It defaults to a list.
 
-        Args:
-            into (Fn[Iterable[I], T] | None): An optional custom collector function,
-            which defaults to a list.
+            Args:
+                into (Fn[Iterable[I], T] | None): An optional custom collector function,
+                which defaults to a list.
 
-        Returns:
-            T | list[I]: The collected result of the stream.
+            Returns:
+                T | list[I]: The collected result of the stream.
 
-        Example:
-            >>> result = await astream([1, 2, 3]).map(lambda x: x + 1).collect()
-            >>> assert result == [2, 3, 4]
+        Examples
+        --------
+        >>> result = await astream([1, 2, 3]).map(lambda x: x + 1).collect()
+        >>> assert result == [2, 3, 4]
 
-            >>> result = await (
-                astream([1, 2, 3])
-                    .map(lambda x: x + 1)
-                    .filter(lambda x: x % 2 == 0)
-                    .take(2)
-                    .collect(into=tuple)
-                )
-            >>> assert result == (2, 4)
+        >>> result = await (
+                        astream([1, 2, 3])
+                            .map(lambda x: x + 1)
+                            .filter(lambda x: x % 2 == 0)
+                            .take(2)
+                            .collect(into=tuple)
+                    )
+        >>> assert result == (2, 4)
         """
         collected = [i async for i in self]
         return collected if not into else into(collected)
@@ -112,11 +114,11 @@ class AsyncStream[I]:
         mapped values. The mapping function can be either synchronous or
         asynchronous.
 
-        Example:
-        ```python
-        result = await astream([1, 2, 3]).map(lambda x: x + 1).collect()
-        assert result == [2, 3, 4]
-        ```
+        Examples
+        --------
+
+        >>> result = await astream([1, 2, 3]).map(lambda x: x + 1).collect()
+        [2, 3, 4]
         """
 
         async def amap():
@@ -138,11 +140,12 @@ class AsyncStream[I]:
         Returns:
             AsyncStream[I]: a new stream of the filtered values
 
-        Example:
-            >>> result = await astream([1, 2, 3]).filter(lambda x: x % 2 == 0).collect()
-            >>> assert result == [2]
-            >>> result = await astream([1, None, 3]).filter(None).collect()
-            >>> assert result == [1, 3]
+        Examples
+        --------
+        >>> result = await astream([1, 2, 3]).filter(lambda x: x % 2 == 0).collect()
+        [2]
+        >>> result = await astream([1, None, 3]).filter(None).collect()
+        [1, 3]
         """
 
         async def afilter():
@@ -167,13 +170,14 @@ class AsyncStream[I]:
             AsyncStream[I]: A new stream containing at most `n` items from the
             original stream.
 
-        Example:
-            >>> result = await astream([1, 2, 3, 4]).take(2).collect()
-            >>> assert result == [1, 2]
-            >>> result = await astream([1]).take(3).collect()
-            >>> assert result == [1]
-            >>> result = await astream([]).take(2).collect()
-            >>> assert result == []
+        Examples
+        --------
+        >>> result = await astream([1, 2, 3, 4]).take(2).collect()
+        [1, 2]
+        >>> result = await astream([1]).take(3).collect()
+        [1]
+        >>> result = await astream([]).take(2).collect()
+        []
         """
 
         async def atake() -> AsyncIterator[I]:
@@ -198,6 +202,11 @@ class AsyncStream[I]:
         Returns:
             AsyncStream[I]: A new stream containing the values taken while the
             predicate is true.
+
+        Examples
+        --------
+        >>> result = await astream([1, 2, 3, 4]).take_while(lambda x: x < 3).collect()
+        [1, 2]
         """
 
         async def atake_while() -> AsyncIterator[I]:
@@ -218,11 +227,12 @@ class AsyncStream[I]:
         Returns:
             AsyncStream[I]: a new stream with the default value if the stream is empty
 
-        Example:
-            >>> result = await astream(ayield_range(1, 4)).default(0).collect()
-            >>> assert result == [1, 2, 3]
-            >>> result = await astream(ayield_range(1, 1)).default(0).collect()
-            >>> assert result == [0]
+        Examples
+        --------
+        >>> result = await astream(ayield_range(1, 4)).default(0).collect()
+        [1, 2, 3]
+        >>> result = await astream(ayield_range(1, 1)).default(0).collect()
+        [0]
         """
 
         async def adefault() -> AsyncIterator[I]:

@@ -1,4 +1,37 @@
 # Amalfi: Documentation and Usage
+
+
+### Table of Contents
+- [Amalfi: Documentation and Usage](#amalfi-documentation-and-usage)
+    - [Table of Contents](#table-of-contents)
+    - [Examples](#examples)
+  - [Core Function types](#core-function-types)
+    - [`Fn`: The Function Type](#fn-the-function-type)
+    - [`AsyncFn`: The Asynchronous Function Type](#asyncfn-the-asynchronous-function-type)
+    - [`IterFn`: The Iterable Function Type](#iterfn-the-iterable-function-type)
+    - [`AsyncIterFn`: The Asynchronous Iterable Function Type](#asynciterfn-the-asynchronous-iterable-function-type)
+  - [Pipelining](#pipelining)
+    - [Pipelines](#pipelines)
+  - [Operators](#operators)
+    - [Mapping](#mapping)
+    - [Filtering](#filtering)
+    - [Reducing](#reducing)
+    - [Collecting](#collecting)
+  - [Utilities](#utilities)
+    - [`as_async`: Convert a function from sync to async](#as_async-convert-a-function-from-sync-to-async)
+    - [TODO:](#todo)
+  - [Monads](#monads)
+    - [Maybe / Option Monad](#maybe--option-monad)
+    - [Either Monad / Result Type](#either-monad--result-type)
+    - [Utilities for Monads](#utilities-for-monads)
+  - [Error Handling](#error-handling)
+    - [Utilities](#utilities-1)
+    - [Parallel and Concurrent Execution](#parallel-and-concurrent-execution)
+  - [Asynchronous Programming](#asynchronous-programming)
+  - [Functional Data Structures](#functional-data-structures)
+  - [Additional Functional Utilities](#additional-functional-utilities)
+
+### Examples
 See the [examples](../examples/README.md) directory for more advanced usage.
 
 ## Core Function types

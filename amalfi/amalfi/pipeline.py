@@ -19,7 +19,8 @@ class Pipeline[I, O]:
     - `input`: The initial input value for the pipeline.
     - `fn`: A callable representing the chained functions of the pipeline.
 
-    Examples:
+    Examples
+    --------
 
     Basic usage with integer transformations:
 
@@ -81,16 +82,22 @@ class Pipeline[I, O]:
     fn: Fn[I, O]
 
     def __init__(self, input: I, fn: Fn[I, O] = identity):
-        """Initialize the `Pipeline` with an input value and a function."""
+        """
+        Initialize the `Pipeline` with an input value and a function,
+        defaulting to the identity function if none is provided.
+        """
         self.input = input
         self.fn = fn
 
     def __call__(self) -> O:
-        """Execute the pipeline on the stored input."""
+        """
+        Execute the pipeline on the stored input using the stored function.
+        Alias for `#run` method.
+        """
         return self.run()
 
     def run(self) -> O:
-        """Execute the pipeline on the stored input."""
+        """Execute the pipeline on the stored input using the stored function."""
         return self.fn(self.input)
 
     def step[U](self, fn: Fn[O, U]) -> Pipeline[I, U]:
@@ -99,6 +106,14 @@ class Pipeline[I, O]:
 
         This method creates a new `Pipeline` instance that composes the current pipeline
         function with the provided function `fn`.
+
+        Examples
+        --------
+        >>> def add_one(x: int) -> int:
+                return x + 1
+        >>> my_pipeline = pipe(3).step(add_one).step(lambda x: x * 2)
+        >>> my_pipeline()  # (3 + 1) * 2 = 8
+        8
         """
 
         def composed_fn(value: I) -> U:
@@ -110,12 +125,29 @@ class Pipeline[I, O]:
         """
         Adds a function as a step to the pipeline using the `|` operator.
         Alias for `#step` method.
+
+        Examples
+        --------
+        >>> def add_one(x: int) -> int:
+                return x + 1
+        >>> double = lambda x: x * 2
+        >>> my_pipeline = pipe(3) | add_one | double
+        >>> my_pipeline()  # (3 + 1) * 2 = 8
+        8
         """
 
         return self.step(fn)
 
     def with_input(self, value: I) -> Pipeline[I, O]:
-        """Change the input value of the pipeline."""
+        """
+        Change the input value of the pipeline.
+
+        Args:
+            value (I): The new input value for the pipeline.
+
+        Returns:
+            Pipeline[I, O]: The pipeline with the updated input, as a chained call.
+        """
         self.input = value
         return self
 
@@ -124,6 +156,22 @@ class Pipeline[I, O]:
         Concatenate two pipelines. The output of the current pipeline is passed
         as input to the other pipeline, regardless of the input value of the
         other pipeline.
+
+        Args:
+            other (Pipeline[O, U]): The other pipeline to concatenate with.
+
+        Returns:
+            Pipeline[I, U]: The new concatenated pipeline, with the input value of
+            the current pipeline as input.
+
+        Examples
+        --------
+        >>> def add_one(x: int) -> int:
+                return x + 1
+        >>> pipeline_a = pipe(3) | add_one
+        >>> pipeline_b = pipe(4) | lambda x: x * 2
+        >>> pipeline_a.concat(pipeline_b).run()  # (3 + 1) * 2 = 8
+        8
         """
 
         def concat_fn(value: I) -> U:
@@ -135,16 +183,42 @@ class Pipeline[I, O]:
         """
         Concatenate two pipelines using the `>` operator.
         Alias for `#concat` method.
+
+        Examples
+        --------
+        >>> def add_one(x: int) -> int:
+                return x + 1
+        >>> pipeline_a = pipe(3) | add_one
+        >>> pipeline_b = pipe(4) | lambda x: x * 2
+        >>> concat_pipeline = pipeline_a > pipeline_b  # (3 + 1) * 2 = 8
+        >>> concat_pipeline()
+        8
         """
         return self.concat(other)
 
     def to_async(self) -> AsyncPipeline[I, O]:
-        """Convert the pipeline to an asynchronous pipeline."""
+        """Convert the pipeline to an asynchronous pipeline.
+
+        Returns:
+            AsyncPipeline[I, O]: The asynchronous pipeline.
+
+        Examples
+        --------
+        >>> def add_one(x: int) -> int:
+                return x + 1
+        >>> async def wait_and_add_one(x: int) -> int:
+                await asyncio.sleep(0.001)
+                return x + 1
+        >>> pipeline = pipe(3) | lambda x: x + 1
+        >>> async_pipeline = pipeline.to_async().step(wait_and_add_one)
+        >>> result = await async_pipeline()  # (3 + 1) + 1 = 5
+        5
+        """
         return AsyncPipeline(self.input, as_async(self.fn))
 
 
 def pipe[T](input: T, fn: Fn[T, T] | None = None) -> Pipeline[T, T]:
-    """Alias for the `Pipeline.pipe` class method."""
+    """Alias for the `Pipeline` constructor."""
     return Pipeline(input, fn or identity)
 
 
@@ -166,8 +240,8 @@ class AsyncPipeline[I, O]:
     - `input`: The initial input value for the pipeline.
     - `fn`: An async callable representing the chained functions of the pipeline.
 
-    Examples:
-
+    Examples
+    --------
     Basic usage with mixed sync and async functions:
 
     ```python
@@ -196,19 +270,22 @@ class AsyncPipeline[I, O]:
 
     def __init__(self, input: I, fn: Fn[I, O] | AsyncFn[I, O] = identity):
         """
-        Initialize the `AsyncPipeline` with an input value and a function.
-        If the function is not async, it will be wrapped in an async wrapper in
-        order to be able to chain it with other async functions.
+        Initialize the `AsyncPipeline` with an input value and a function,
+        defaulting to the identity function if none is provided.
+
+        If the function is not async, it will be converted using an async wrapper
+        in order to be able to chain it with other async functions.
         """
         self.input = input
         self.fn = as_async(fn)
 
     async def __call__(self) -> O:
-        """Execute the pipeline on the stored input."""
+        """Execute the pipeline on the stored input using the stored function.
+        Alias for `#run` method."""
         return await self.run()
 
     async def run(self) -> O:
-        """Execute the pipeline on the stored input."""
+        """Execute the pipeline on the stored input using the stored function."""
         return await self.fn(self.input)
 
     def step[U](self, fn: Fn[O, U] | AsyncFn[O, U]) -> AsyncPipeline[I, U]:
@@ -218,6 +295,15 @@ class AsyncPipeline[I, O]:
         This method creates a new `AsyncPipeline` instance that composes the
         current pipeline function with the provided function `fn`, that can be
         either sync or async.
+
+        Examples
+        --------
+        >>> async def wait_and_add_one(x: int) -> int:
+                await asyncio.sleep(0.001)
+                return x + 1
+        >>> my_pipeline = apipe(3).step(wait_and_add_one).step(lambda x: x * 2)
+        >>> result = await my_pipeline()  # (3 + 1) * 2 = 8
+        8
         """
 
         async def composed_fn(value: I) -> U:
@@ -229,11 +315,28 @@ class AsyncPipeline[I, O]:
         """
         Adds a function as a step to the pipeline using the `|` operator.
         Alias for `#step` method.
+
+        Examples
+        --------
+        >>> async def wait_and_add_one(x: int) -> int:
+                await asyncio.sleep(0.001)
+                return x + 1
+        >>> my_pipeline = apipe(3) | wait_and_add_one | (lambda x: x * 2)
+        >>> result = await my_pipeline()  # (3 + 1) * 2 = 8
+        8
         """
         return self.step(fn)
 
     def with_input(self, value: I) -> AsyncPipeline[I, O]:
-        """Change the input value of the pipeline."""
+        """
+        Change the input value of the pipeline.
+
+        Args:
+            value (I): The new input value for the pipeline.
+
+        Returns:
+            AsyncPipeline[I, O]: The pipeline with the updated input, as a chained call.
+        """
         self.input = value
         return self
 
@@ -242,6 +345,23 @@ class AsyncPipeline[I, O]:
         Concatenate two pipelines. The output of the current pipeline is passed
         as input to the other pipeline, regardless of the input value of the
         other pipeline.
+
+        Args:
+            other (AsyncPipeline[O, U]): The other pipeline to concatenate with.
+
+        Returns:
+            AsyncPipeline[I, U]: The new concatenated pipeline, with the input value of
+            the current pipeline as input.
+
+        Examples
+        --------
+        >>> async def wait_and_add_one(x: int) -> int:
+                await asyncio.sleep(0.001)
+                return x + 1
+        >>> pipeline_a = apipe(3) | wait_and_add_one
+        >>> pipeline_b = apipe(4) | lambda x: x * 2
+        >>> pipeline_a.concat(pipeline_b)()  # (3 + 1) * 2 = 8
+        8
         """
 
         async def concat_fn(value: I) -> U:
@@ -253,6 +373,17 @@ class AsyncPipeline[I, O]:
         """
         Concatenate two pipelines using the `>` operator.
         Alias for `#concat` method.
+
+        Examples
+        --------
+        >>> async def wait_and_add_one(x: int) -> int:
+                await asyncio.sleep(0.001)
+                return x + 1
+        >>> pipeline_a = apipe(3) | wait_and_add_one
+        >>> pipeline_b = apipe(4) | lambda x: x * 2
+        >>> concat_pipeline = pipeline_a > pipeline_b  # (3 + 1) * 2 = 8
+        >>> result = await concat_pipeline()
+        8
         """
         return self.concat(other)
 
