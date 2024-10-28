@@ -3,6 +3,7 @@ from typing import AsyncIterable
 
 import pytest
 
+from amalfi.core import as_async
 from amalfi.ops import map_
 from amalfi.ops.map import amap
 from amalfi.pipeline import AsyncPipeline, Pipeline, pipe
@@ -127,7 +128,24 @@ class TestAsyncStream:
             assert await s.collect() == [1, 2, 3]
 
         @pytest.mark.anyio
-        async def test_default_if_empty_empty(self):
+        async def test_default_empty(self):
             s = astream(ayield_range(1, 1)).default(0)
             assert isinstance(s, AsyncStream)
             assert await s.collect() == [0]
+
+    class TestTap:
+        @pytest.mark.anyio
+        async def test_tap(self, ainput: AsyncIterable[int]):
+            numbers: list[int] = []
+            s = astream(ainput).tap(lambda x: numbers.append(x))
+            assert isinstance(s, AsyncStream)
+            assert await s.collect() == [1, 2, 3]
+            assert numbers == [1, 2, 3]
+
+        @pytest.mark.anyio
+        async def test_atap(self, ainput: AsyncIterable[int]):
+            numbers: list[int] = []
+            s = astream(ainput).tap(as_async(lambda x: numbers.append(x)))
+            assert isinstance(s, AsyncStream)
+            assert await s.collect() == [1, 2, 3]
+            assert numbers == [1, 2, 3]

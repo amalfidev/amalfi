@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import AsyncIterable, AsyncIterator, Iterable, overload
+from typing import Any, AsyncIterable, AsyncIterator, Iterable, overload
+
+from amalfi.ops.tap import atap
 
 from ..core import AsyncFn, Fn, as_async
 from ..pipeline import AsyncPipeline, Pipeline, apipe, pipe
@@ -244,6 +246,22 @@ class AsyncStream[I]:
                 yield default
 
         return AsyncStream(adefault())
+
+    def tap(self, fn: Fn[I, Any]) -> AsyncStream[I]:
+        """
+        Perform a synchronous or asynchronous side effect within a stream without
+        altering the data flow.
+
+        Examples
+        --------
+        >>> result = await astream([1, 2, 3]).tap(print).collect()
+        1
+        2
+        3
+        >>> print(result)
+        [1, 2, 3]
+        """
+        return self.map(atap(as_async(fn)))
 
     # endregion --ops
 

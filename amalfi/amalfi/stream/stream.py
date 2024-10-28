@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from itertools import islice, takewhile
-from typing import Iterable, Iterator, overload
+from typing import Any, Iterable, Iterator, overload
+
+from amalfi.ops import tap
 
 from ..core import Fn, as_aiter
 from ..pipeline import AsyncPipeline, Pipeline, apipe, pipe
@@ -206,6 +208,22 @@ class Stream[I]:
 
         return Stream(default_gen())
 
+    def tap(self, fn: Fn[I, Any]) -> Stream[I]:
+        """
+        Perform a synchronous side effect within a stream without altering the
+        data flow.
+
+        Examples
+        --------
+        >>> result = stream([1, 2, 3]).tap(print).collect()
+        1
+        2
+        3
+        >>> print(result)
+        [1, 2, 3]
+        """
+        return self.map(tap(fn))
+
     # endregion --ops
 
 
@@ -218,29 +236,3 @@ def stream[I](input: Iterable[I]) -> Stream[I]:
     >>> assert result == [2, 3, 4]
     """
     return Stream(input)
-
-
-# TODO:
-# - operators: see https://rxjs.dev/guide/operators#transformation-operators
-# -- reduce / areduce
-# -- catch_error
-# -- count
-# -- fork / afork
-# -- group_by
-# -- partition
-# -- scan
-# -- tap
-# -- zip
-# -- chain
-# -- flat_map
-# -- enumerate
-# -- zip_longest
-# -- zip_with_next
-# -- sorted
-# -- reversed
-# -- unique
-# -- intersperse
-# - to_thread (asyncio, concurrent.futures, threading)
-# - to_process (multiprocessing)
-# - to_executor (concurrent.futures)
-# - to_queue (multiprocessing)

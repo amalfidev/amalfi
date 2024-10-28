@@ -139,3 +139,16 @@ class TestStream:
             s = Stream[int]([]).default(0)
             assert isinstance(s, Stream)
             assert s.collect() == [0]
+
+    class TestTap:
+        def test_tap(self, input: Iterable[int]):
+            numbers: list[int] = []
+
+            def side_effect(y: int):
+                print(y)
+                numbers.append(y)
+
+            s = stream(input).tap(side_effect)
+            assert isinstance(s, Stream)
+            assert s.collect() == [1, 2, 3]
+            assert numbers == [1, 2, 3]
