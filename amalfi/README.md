@@ -246,16 +246,12 @@ Useful for working with sync functions in an async context, or for converting sy
 
 
 ### TODO:
+- **tap**: Perform a side effect within a pipeline without altering the data flow.
 - **fork**: Split the data flow to multiple functions.
-- **fork**: Split the data flow to multiple functions.
-- **apply**: Apply a function to an argument list.
 - **chain**: Compose multiple functions together.
-- **compose**: Create a new function by composing multiple functions from right to left.
 - **partial**: Partially apply a function by fixing some arguments.
 - **curry**: Transform a function into a sequence of functions each taking a single argument.
 - **then**: Continue a computation after a promise or future resolves.
-- **tap**: Perform a side effect within a pipeline without altering the data flow.
-- **to_async**: Convert a synchronous function to an asynchronous one.
 - **to_thread**: Run a function in a separate thread.
 - **to_process**: Run a function in a separate process.
 
