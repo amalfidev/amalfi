@@ -16,7 +16,7 @@ class TestTap:
             print(y)
             numbers.append(y)
 
-        assert pipe(1).step(tap(side_effect)).step(add_one).run() == 2
+        assert pipe(1).then(tap(side_effect)).then(add_one).run() == 2
         assert numbers == [1]
 
     @pytest.mark.anyio
@@ -28,6 +28,6 @@ class TestTap:
             print(y)
             numbers.append(y)
 
-        pipeline = apipe(1).step(atap(side_effect)).step(add_one)
+        pipeline = apipe(1).then(atap(side_effect)).then(add_one)
         assert await pipeline.run() == 2
         assert numbers == [1]

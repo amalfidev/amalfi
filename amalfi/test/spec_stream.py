@@ -82,7 +82,7 @@ class TestStream:
 
         def test_collect_into_pipeline(self, input: Iterable[int]):
             pipeline = (
-                stream(input).collect(into=pipe).step(map_(lambda x: x + 1)).step(sum)
+                stream(input).collect(into=pipe).then(map_(lambda x: x + 1)).then(sum)
             )
             assert isinstance(pipeline, Pipeline)
             assert pipeline.run() == 9

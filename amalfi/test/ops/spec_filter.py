@@ -51,11 +51,11 @@ class TestFilter:
         @pytest.mark.anyio
         async def test_filter_with_lambda(self):
             is_even_async = as_async(is_even)
-            result = apipe([1, 2, 3, 4]).step(afilter(is_even_async)).step(list)
+            result = apipe([1, 2, 3, 4]).then(afilter(is_even_async)).then(list)
 
             assert await result.run() == [2, 4]
 
         @pytest.mark.anyio
         async def test_filter_none(self):
-            result = await apipe([1, None, 3]).step(filter_(None)).step(list).run()
+            result = await apipe([1, None, 3]).then(filter_(None)).then(list).run()
             assert result == [1, 3]

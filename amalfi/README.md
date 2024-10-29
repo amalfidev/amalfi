@@ -281,12 +281,17 @@ Useful for working with sync functions in an async context, or for converting sy
 - Operators: see https://rxjs.dev/guide/operators#transformation-operators
   - reduce / areduce
   - catch_error
+  - retry / retry_when
+  - reverse
+  - sort
   - count
+  - max / min
   - fork / afork
   - group_by
   - partition
   - scan
   - zip
+  - next / last
   - chain
   - flat_map
   - enumerate

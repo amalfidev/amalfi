@@ -38,7 +38,7 @@ class Pipeline[I, O]:
     # or
     my_pipeline = pipe(3) | add_one | multiply_by_two
     # or
-    my_pipeline = pipe(3).step(add_one).step(multiply_by_two)
+    my_pipeline = pipe(3).then(add_one).then(multiply_by_two)
 
     result = my_pipeline()  # (3 + 1) * 2 = 8
     print(result)  # Output: 8
@@ -60,6 +60,10 @@ class Pipeline[I, O]:
 
     # Create a pipeline that squares a number, converts to string, and shouts it
     my_pipeline = pipe(5) | square | to_string | shout
+    # or
+    my_pipeline = Pipeline(5) | square | to_string | shout
+    # or
+    my_pipeline = pipe(5).then(square).then(to_string).then(shout)
 
     result = my_pipeline()  # Square 5, convert, and shout
     print(result)  # Output: "RESULT IS 25!"
@@ -100,7 +104,7 @@ class Pipeline[I, O]:
         """Execute the pipeline on the stored input using the stored function."""
         return self.fn(self.input)
 
-    def step[U](self, fn: Fn[O, U]) -> Pipeline[I, U]:
+    def then[U](self, fn: Fn[O, U]) -> Pipeline[I, U]:
         """
         Adds a function as a step to the pipeline.
 
@@ -111,7 +115,7 @@ class Pipeline[I, O]:
         --------
         >>> def add_one(x: int) -> int:
                 return x + 1
-        >>> my_pipeline = pipe(3).step(add_one).step(lambda x: x * 2)
+        >>> my_pipeline = pipe(3).then(add_one).then(lambda x: x * 2)
         >>> my_pipeline()  # (3 + 1) * 2 = 8
         8
         """
@@ -124,7 +128,7 @@ class Pipeline[I, O]:
     def __or__[U](self, fn: Fn[O, U]) -> Pipeline[I, U]:
         """
         Adds a function as a step to the pipeline using the `|` operator.
-        Alias for `#step` method.
+        Alias for `#then` method.
 
         Examples
         --------
@@ -136,7 +140,7 @@ class Pipeline[I, O]:
         8
         """
 
-        return self.step(fn)
+        return self.then(fn)
 
     def with_input(self, value: I) -> Pipeline[I, O]:
         """
@@ -258,7 +262,9 @@ class AsyncPipeline[I, O]:
     # Create an async pipeline that adds one and then multiplies by two
     my_pipeline = apipe(3) | add_one | multiply_by_two
     # or
-    my_pipeline = AsyncPipeline(3, add_one | multiply_by_two)
+    my_pipeline = apipe(3) | add_one | multiply_by_two
+    # or
+    my_pipeline = apipe(3).then(add_one).then(multiply_by_two)
 
     result = asyncio.run(my_pipeline())  # (3 + 1) * 2 = 8
     print(result)  # Output: 8
@@ -288,7 +294,7 @@ class AsyncPipeline[I, O]:
         """Execute the pipeline on the stored input using the stored function."""
         return await self.fn(self.input)
 
-    def step[U](self, fn: Fn[O, U] | AsyncFn[O, U]) -> AsyncPipeline[I, U]:
+    def then[U](self, fn: Fn[O, U] | AsyncFn[O, U]) -> AsyncPipeline[I, U]:
         """
         Adds a function as a step to the pipeline.
 
@@ -301,7 +307,7 @@ class AsyncPipeline[I, O]:
         >>> async def wait_and_add_one(x: int) -> int:
                 await asyncio.sleep(0.001)
                 return x + 1
-        >>> my_pipeline = apipe(3).step(wait_and_add_one).step(lambda x: x * 2)
+        >>> my_pipeline = apipe(3).then(wait_and_add_one).then(lambda x: x * 2)
         >>> result = await my_pipeline()  # (3 + 1) * 2 = 8
         8
         """
@@ -314,7 +320,7 @@ class AsyncPipeline[I, O]:
     def __or__[U](self, fn: Fn[O, U] | AsyncFn[O, U]) -> AsyncPipeline[I, U]:
         """
         Adds a function as a step to the pipeline using the `|` operator.
-        Alias for `#step` method.
+        Alias for `#then` method.
 
         Examples
         --------
@@ -325,7 +331,7 @@ class AsyncPipeline[I, O]:
         >>> result = await my_pipeline()  # (3 + 1) * 2 = 8
         8
         """
-        return self.step(fn)
+        return self.then(fn)
 
     def with_input(self, value: I) -> AsyncPipeline[I, O]:
         """

@@ -53,10 +53,10 @@ class TestAsyncStream:
         async def test_collect_into_pipeline(self, ainput: AsyncIterable[int]):
             apipeline = (
                 (await astream(ainput).collect(into=pipe))
-                .step(map_(lambda x: x + 1))
-                .step(sum)
+                .then(map_(lambda x: x + 1))
+                .then(sum)
                 .to_async()
-                .step(wait_and_add_one)
+                .then(wait_and_add_one)
             )
             assert isinstance(apipeline, AsyncPipeline)
             assert await apipeline.run() == 10
