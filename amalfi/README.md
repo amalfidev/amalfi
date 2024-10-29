@@ -287,6 +287,7 @@ Useful for working with sync functions in an async context, or for converting sy
   - count
   - max / min
   - fork / afork
+  - starmap
   - group_by
   - partition
   - scan

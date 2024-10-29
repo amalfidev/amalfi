@@ -3,6 +3,7 @@ from typing import Iterable
 
 import pytest
 
+from amalfi.core import VFn
 from amalfi.ops import map_
 from amalfi.ops.map import amap
 from amalfi.pipeline import AsyncPipeline, Pipeline, pipe
@@ -152,3 +153,15 @@ class TestStream:
             assert isinstance(s, Stream)
             assert s.collect() == [1, 2, 3]
             assert numbers == [1, 2, 3]
+
+    class TestReduce:
+        def test_reduce(self, input: Iterable[int]):
+            add: VFn[[int, int], int] = lambda x, y: x + y  # noqa: E731
+
+            # async def wait_and_add(x: int, y: int) -> int:
+            #     await asyncio.sleep(0.001)
+            #     return x + y
+
+            s = stream(input).reduce(add, 0)
+            assert isinstance(s, Stream)
+            assert next(iter(s)) == 6

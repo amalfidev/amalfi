@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import functools
 from itertools import islice, takewhile
 from typing import Any, Iterable, Iterator, overload
 
 from amalfi.ops import tap
 
-from ..core import Fn, as_aiter
+from ..core import Fn, VFn, as_aiter
 from ..pipeline import AsyncPipeline, Pipeline, apipe, pipe
 from .astream import AsyncStream
 
@@ -223,6 +224,28 @@ class Stream[I]:
         [1, 2, 3]
         """
         return self.map(tap(fn))
+
+    def reduce[O](self, fn: VFn[[O, I], O], initial: O) -> Stream[O]:
+        """
+        Reduce or fold the stream to a single value using a reducer function.
+
+        Args:
+            fn (VFn[[O, I], O]): A synchronous reducer function
+            initial (O): The initial value for the reduction
+
+        Returns:
+            Stream[O]: a new stream of the reduced value
+
+        Examples
+        --------
+        >>> result = stream([1, 2, 3]).reduce(lambda x, y: x + y, 0).collect()
+        >>> assert result == [6]
+        """
+
+        def reducer() -> Iterator[O]:
+            yield functools.reduce(fn, self, initial)
+
+        return Stream(reducer())
 
     # endregion --ops
 

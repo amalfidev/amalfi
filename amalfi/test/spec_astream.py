@@ -149,3 +149,20 @@ class TestAsyncStream:
             assert isinstance(s, AsyncStream)
             assert await s.collect() == [1, 2, 3]
             assert numbers == [1, 2, 3]
+
+    class TestReduce:
+        @pytest.mark.anyio
+        async def test_reduce(self, ainput: AsyncIterable[int]):
+            async def wait_and_add(x: int, y: int) -> int:
+                await asyncio.sleep(0.001)
+                return x + y
+
+            s = astream(ainput).reduce(wait_and_add, 0)
+            assert isinstance(s, AsyncStream)
+            assert await s.collect() == [6]
+
+        @pytest.mark.anyio
+        async def test_reduce_with_sync_fn(self, ainput: AsyncIterable[int]):
+            s = astream(ainput).reduce(lambda x, y: x + y, 0)
+            assert isinstance(s, AsyncStream)
+            assert await s.collect() == [6]

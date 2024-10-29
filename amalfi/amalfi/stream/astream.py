@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, AsyncIterable, AsyncIterator, Iterable, overload
+import asyncio
+from typing import Any, AsyncIterable, AsyncIterator, Iterable, cast, overload
 
 from amalfi.ops.tap import atap
 
-from ..core import AsyncFn, Fn, as_async
+from ..core import AsyncFn, AsyncVFn, Fn, VFn, as_async
 from ..pipeline import AsyncPipeline, Pipeline, apipe, pipe
 
 
@@ -247,7 +248,7 @@ class AsyncStream[I]:
 
         return AsyncStream(adefault())
 
-    def tap(self, fn: Fn[I, Any]) -> AsyncStream[I]:
+    def tap(self, fn: Fn[I, Any] | AsyncFn[I, Any]) -> AsyncStream[I]:
         """
         Perform a synchronous or asynchronous side effect within a stream without
         altering the data flow.
@@ -262,6 +263,27 @@ class AsyncStream[I]:
         [1, 2, 3]
         """
         return self.map(atap(as_async(fn)))
+
+    def reduce[O](
+        self, fn: VFn[[O, I], O] | AsyncVFn[[O, I], O], initial: O
+    ) -> AsyncStream[O]:
+        """
+        Reduce or fold the stream to a single value using a reducer function.
+        """
+
+        async def areducer() -> AsyncIterator[O]:
+            acc = initial
+            if asyncio.iscoroutinefunction(fn):
+                async for item in self:
+                    acc = await fn(acc, item)
+                yield acc
+            else:
+                sync_fn = cast(VFn[[O, I], O], fn)
+                async for item in self:
+                    acc = sync_fn(acc, item)
+                yield acc
+
+        return AsyncStream(areducer())
 
     # endregion --ops
 
