@@ -3,13 +3,20 @@ from typing import AsyncIterable
 
 import pytest
 
-from amalfi.core import as_async
+from amalfi.core import AsyncTFn, TFn, as_async
 from amalfi.ops import map_
 from amalfi.ops.map import amap
 from amalfi.pipeline import AsyncPipeline, Pipeline, pipe
 from amalfi.stream import AsyncStream, astream
 
-from .stub import add_one, ayield_range, wait_and_add_one, wait_and_double
+from .stub import (
+    add_one,
+    ayield_range,
+    multiply,
+    wait_and_add_one,
+    wait_and_double,
+    wait_and_multiply,
+)
 
 
 @pytest.fixture
@@ -166,3 +173,20 @@ class TestAsyncStream:
             s = astream(ainput).reduce(lambda x, y: x + y, 0)
             assert isinstance(s, AsyncStream)
             assert await s.collect() == [6]
+
+    class TestStarmap:
+        @pytest.mark.anyio
+        @pytest.mark.parametrize("fn", [wait_and_multiply, multiply])
+        async def test_starmap(
+            self,
+            fn: TFn[*tuple[int, int], int] | AsyncTFn[*tuple[int, int], int],
+        ):
+            async def apairs():
+                await asyncio.sleep(0.001)
+                yield (1, 2)
+                yield (3, 4)
+                yield (5, 6)
+
+            s = astream(apairs()).starmap(fn)
+            assert isinstance(s, AsyncStream)
+            assert await s.collect() == [2, 12, 30]

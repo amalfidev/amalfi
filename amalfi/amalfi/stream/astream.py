@@ -5,7 +5,7 @@ from typing import Any, AsyncIterable, AsyncIterator, Iterable, cast, overload
 
 from amalfi.ops.tap import atap
 
-from ..core import AsyncFn, AsyncVFn, Fn, VFn, as_async
+from ..core import AsyncFn, AsyncTFn, AsyncVFn, Fn, TFn, VFn, as_async
 from ..pipeline import AsyncPipeline, Pipeline, apipe, pipe
 
 
@@ -284,6 +284,36 @@ class AsyncStream[I]:
                 yield acc
 
         return AsyncStream(areducer())
+
+    def starmap[*P, O](self, fn: TFn[*P, O] | AsyncTFn[*P, O]) -> AsyncStream[O]:
+        """
+        Apply a synchronous or asynchronous tuple-unpacking function to each element
+        of an iterable, yielding the mapped values. The stream must be an iterable of
+        tuples, otherwise a `ValueError` is raised.
+
+        Args:
+            fn (TFn[*P, O] | AsyncTFn[*P, O]): A synchronous or asynchronous
+            tuple-unpacking function
+
+        Returns:
+            AsyncStream[O]: a new stream of the mapped values
+
+        Raises:
+            ValueError: If the input is not an iterable of tuples
+        """
+
+        async def astarmapper() -> AsyncIterator[O]:
+            async for item in self:
+                if not isinstance(item, tuple):
+                    raise ValueError(f"Expected tuple, got {type(item)}")
+
+                if asyncio.iscoroutinefunction(fn):
+                    yield await fn(*cast(tuple[*P], item))
+                else:
+                    sync_fn = cast(TFn[*P, O], fn)
+                    yield sync_fn(*cast(tuple[*P], item))
+
+        return AsyncStream(astarmapper())
 
     # endregion --ops
 
