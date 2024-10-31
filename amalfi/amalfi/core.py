@@ -9,6 +9,7 @@ from typing import (
     Iterable,
     Protocol,
     TypeGuard,
+    Unpack,
     cast,
     runtime_checkable,
 )
@@ -39,6 +40,21 @@ A type alias for a variadic asynchronous function,
 ie. it takes multiple arguments of types `I` and returns an
 output of type `O`. (V stands for 'Variadic')
 """
+
+type TFn[*I, O] = Callable[[Unpack[I]], O]
+"""
+A type alias for a tuple-unpacking synchronous function,
+ie. it takes a tuple of arguments of types `I` and returns an
+output of type `O`.
+"""
+
+type AsyncTFn[*I, O] = Callable[[Unpack[I]], Coroutine[Any, Any, O]]
+"""
+A type alias for a tuple-unpacking asynchronous function,
+ie. it takes a tuple of arguments of types `I` and returns an
+output of type `O`.
+"""
+
 
 type IterFn[I, O] = Fn[Iterable[I], Iterable[O]]
 """

@@ -279,15 +279,15 @@ Useful for working with sync functions in an async context, or for converting sy
 
 ### TODO:
 - Operators: see https://rxjs.dev/guide/operators#transformation-operators
-  - reduce / areduce
+  - starmap
+  - len
   - catch_error
   - retry / retry_when
+  - all / every
   - reverse
   - sort
-  - count
   - max / min
   - fork / afork
-  - starmap
   - group_by
   - partition
   - scan
@@ -305,7 +305,6 @@ Useful for working with sync functions in an async context, or for converting sy
 - **chain**: Compose multiple functions together.
 - **partial**: Partially apply a function by fixing some arguments.
 - **curry**: Transform a function into a sequence of functions each taking a single argument.
-- **then**: Continue a computation after a promise or future resolves.
 - **to_thread**: Run a function in a separate thread.
 - **to_process**: Run a function in a separate process.
 
