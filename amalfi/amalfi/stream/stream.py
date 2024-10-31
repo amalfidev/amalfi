@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import functools
 from itertools import islice, takewhile
-from typing import Any, Iterable, Iterator, overload
+from typing import Any, Iterable, Iterator, cast, overload
 
 from amalfi.ops import tap
 
-from ..core import Fn, VFn, as_aiter
+from ..core import Fn, TFn, VFn, as_aiter
 from ..pipeline import AsyncPipeline, Pipeline, apipe, pipe
 from .astream import AsyncStream
 
@@ -239,13 +239,46 @@ class Stream[I]:
         Examples
         --------
         >>> result = stream([1, 2, 3]).reduce(lambda x, y: x + y, 0).collect()
-        >>> assert result == [6]
+        [6]
         """
 
         def reducer() -> Iterator[O]:
             yield functools.reduce(fn, self, initial)
 
         return Stream(reducer())
+
+    def starmap[*P, O](self, fn: TFn[*P, O]) -> Stream[O]:
+        """
+        Apply a synchronous tuple-unpacking function to each element of an iterable,
+        yielding the mapped values. The stream must be an iterable of tuples,
+        otherwise a `ValueError` is raised.
+
+        Args:
+            fn (TFn[I, O]): A synchronous tuple-unpacking function
+
+        Returns:
+            Stream[O]: a new stream of the mapped values
+
+        Raises:
+            ValueError: If the input is not an iterable of tuples
+
+        Examples
+        --------
+        >>> result = (
+            stream([(1, 2), (3, 4), (5, 6)])
+                .starmap(lambda x, y: x + y)
+                .collect()
+            )
+        [3, 7, 11]
+        """
+
+        def starmapper() -> Iterator[O]:
+            for item in self:
+                if not isinstance(item, tuple):
+                    raise ValueError(f"Expected tuple, got {type(item)}")
+                yield fn(*cast(tuple[*P], item))
+
+        return Stream(starmapper())
 
     # endregion --ops
 
@@ -256,6 +289,6 @@ def stream[I](input: Iterable[I]) -> Stream[I]:
     Examples
     --------
     >>> result = stream([1, 2, 3]).map(lambda x: x + 1).collect()
-    >>> assert result == [2, 3, 4]
+    [2, 3, 4]
     """
     return Stream(input)

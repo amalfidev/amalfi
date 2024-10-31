@@ -9,7 +9,7 @@ from amalfi.ops.map import amap
 from amalfi.pipeline import AsyncPipeline, Pipeline, pipe
 from amalfi.stream import AsyncStream, Stream, stream
 
-from .stub import add_one, double, wait_and_add_one, yield_range
+from .stub import add_one, double, multiply, wait_and_add_one, yield_range
 
 
 @pytest.fixture
@@ -158,10 +158,18 @@ class TestStream:
         def test_reduce(self, input: Iterable[int]):
             add: VFn[[int, int], int] = lambda x, y: x + y  # noqa: E731
 
-            # async def wait_and_add(x: int, y: int) -> int:
-            #     await asyncio.sleep(0.001)
-            #     return x + y
-
             s = stream(input).reduce(add, 0)
             assert isinstance(s, Stream)
             assert next(iter(s)) == 6
+
+    class TestStarmap:
+        def test_starmap(self):
+            s = stream([(1, 2), (3, 4), (5, 6)]).starmap(multiply)
+            assert isinstance(s, Stream)
+            assert s.collect() == [2, 12, 30]
+
+        def test_starmap_with_non_tuple_input(self):
+            s = stream([1, 2, 3]).starmap(multiply)
+            assert isinstance(s, Stream)
+            with pytest.raises(ValueError):
+                s.collect()
