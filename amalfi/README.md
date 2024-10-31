@@ -18,6 +18,7 @@
     - [Reducing](#reducing)
     - [Collecting](#collecting)
     - [Tapping](#tapping)
+    - [Starmap](#starmap)
   - [Utilities](#utilities)
     - [`as_async`: Convert a function from sync to async](#as_async-convert-a-function-from-sync-to-async)
     - [TODO:](#todo)
@@ -231,6 +232,29 @@ print(await pipeline.run()) # Output: 6 (after 0.3s)
 # prints: [1, 2, 3] (after 0.3s)
 ```
 
+### Starmap
+The starmap operators apply a function to each element of an iterable of tuples.
+- `starmap`: synchronous version.
+- `astarmap`: asynchronous version.
+
+```python
+from amalfi import apipe, pipe
+from amalfi.ops import astarmap, starmap
+
+def multiply(x: int, y: int) -> int:
+    return x * y
+
+result = pipe([(1, 2), (3, 4), (5, 6)]) | starmap(multiply) | sum
+print(result) # Output: 42
+
+async def async_multiply(x: int, y: int) -> int:
+    await asyncio.sleep(0.001)
+    return x * y
+
+result = await apipe([(1, 2), (3, 4), (5, 6)]) | astarmap(async_multiply) | sum
+print(result) # Output: 42 (after 0.3s) 
+```
+
 ## Utilities
 The following utilities are useful to work with functions and are used throughout the library as well. They can become handy when working with the library in a type-safe manner.
 
@@ -279,7 +303,6 @@ Useful for working with sync functions in an async context, or for converting sy
 
 ### TODO:
 - Operators: see https://rxjs.dev/guide/operators#transformation-operators
-  - starmap
   - len
   - catch_error
   - retry / retry_when
