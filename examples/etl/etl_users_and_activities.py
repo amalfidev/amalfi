@@ -8,6 +8,7 @@ from uuid import uuid4
 from faker import Faker
 from pydantic import BaseModel, EmailStr, Field
 
+from amalfi.ops.map import map_
 from amalfi.stream import astream
 
 fake = Faker()
@@ -64,7 +65,7 @@ async def fetch_user_activities(user_id: str):
 async def augment_user_with_activities(user: User):
     return (
         (await astream(fetch_user_activities(user.id)).to_pipe())
-        .then(Activity.model_validate)
+        .then(map_(Activity.model_validate))
         .then(lambda a: {"activities": a})
         .then(lambda a: User.model_validate(user.model_dump() | a))
         .run()
@@ -82,6 +83,13 @@ async def main():
 
     users = await user_stream.collect()
     print(f"Fetched {len(users)} users")
+
+    ## Output:
+    # > sarahcampos@example.net (49 activities)
+    # > taylorjesse@example.net (100 activities)
+    # > bellangela@example.org (83 activities)
+    # > ...
+    # > Fetched 18 users
 
 
 if __name__ == "__main__":
