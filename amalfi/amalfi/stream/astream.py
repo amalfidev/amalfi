@@ -315,6 +315,21 @@ class AsyncStream[I]:
 
         return AsyncStream(astarmapper())
 
+    def zip_with[O](self, other: AsyncIterable[O]) -> AsyncStream[tuple[I, O]]:
+        """Zip two streams together."""
+
+        async def azip_with() -> AsyncIterator[tuple[I, O]]:
+            it1, it2 = self.__aiter__(), other.__aiter__()
+            while True:
+                try:
+                    i = await it1.__anext__()
+                    o = await it2.__anext__()
+                    yield i, o
+                except StopAsyncIteration:
+                    break
+
+        return AsyncStream(azip_with())
+
     # endregion --ops
 
 

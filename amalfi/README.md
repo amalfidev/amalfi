@@ -303,6 +303,7 @@ Useful for working with sync functions in an async context, or for converting sy
 
 ### TODO:
 - Operators: see https://rxjs.dev/guide/operators#transformation-operators
+  - stream foreach
   - len
   - catch_error
   - retry / retry_when
