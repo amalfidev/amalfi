@@ -11,7 +11,7 @@ from pydantic import BaseModel, EmailStr, Field
 from amalfi.ops.map import map_
 from amalfi.stream import astream
 
-fake = Faker()
+fake = Faker(locale="it_IT")
 fake.seed_instance(42)
 
 
@@ -48,48 +48,54 @@ class Activity(BaseModel):
         )
 
 
-async def fetch_users():
-    total_users = fake.random_int(min=100, max=1000)
+async def read_users_from_json_file():
+    """Simulates a slow IO operation."""
+    total_users = fake.random_int(min=5000, max=10000)
+    await asyncio.sleep(0.000001)
     for user in (User.random() for _ in range(total_users)):
-        await asyncio.sleep(0.000001)
         yield user.model_dump()
 
 
-async def fetch_user_activities(user_id: str):
-    total_activities = fake.random_int(min=10, max=100)
+async def fetch_user_activities_from_database(user_id: str):
+    """Simulates a slow IO operation."""
+    total_activities = fake.random_int(min=10, max=20)
+    await asyncio.sleep(0.000001)
     for activity in (Activity.random(user_id) for _ in range(total_activities)):
-        await asyncio.sleep(0.000001)
         yield activity.model_dump()
 
 
 async def augment_user_with_activities(user: User):
-    return (
-        (await astream(fetch_user_activities(user.id)).to_pipe())
-        .then(map_(Activity.model_validate))
+    return await astream(fetch_user_activities_from_database(user.id)).pipe(
+        lambda p: p.then(map_(Activity.model_validate))
         .then(lambda a: {"activities": a})
         .then(lambda a: User.model_validate(user.model_dump() | a))
-        .run()
     )
+
+
+async def write_users_to_json_file(users: list[User]):
+    """Simulates a slow IO operation."""
+    await asyncio.sleep(0.000001)
+    print(f"Writing {len(users)} users to file")
 
 
 async def main():
     user_stream = (
-        astream(fetch_users())
+        astream(read_users_from_json_file())
         .map(User.model_validate)
-        .filter(lambda u: u.country in ["IT", "FR", "ES", "DE", "US"])
+        .filter(lambda u: u.country in ["IT"])
         .map(augment_user_with_activities)
-        .tap(lambda u: print(f"{u.email} ({len(u.activities)} activities)"))
+        .tap(lambda u: print(f"{u.name} ({len(u.activities)} activities)"))
     )
 
     users = await user_stream.collect()
     print(f"Fetched {len(users)} users")
 
     ## Output:
-    # > sarahcampos@example.net (49 activities)
-    # > taylorjesse@example.net (100 activities)
-    # > bellangela@example.org (83 activities)
-    # > ...
-    # > Fetched 18 users
+    # > Maura Garzoni-Cannizzaro (19 activities)
+    # > Priscilla Leoncavallo (16 activities)
+    # > Ludovica Fracci (17 activities)
+    # ...
+    # > Fetched 28 users
 
 
 if __name__ == "__main__":

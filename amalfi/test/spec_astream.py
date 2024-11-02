@@ -5,8 +5,7 @@ import pytest
 
 from amalfi.core import AsyncTFn, TFn, as_async
 from amalfi.ops import map_
-from amalfi.ops.map import amap
-from amalfi.pipeline import AsyncPipeline, Pipeline, pipe
+from amalfi.pipeline import AsyncPipeline, pipe
 from amalfi.stream import AsyncStream, astream
 
 from .stub import (
@@ -34,19 +33,7 @@ class TestAsyncStream:
     async def test_alias(self, ainput: AsyncIterable[int]):
         assert [i async for i in astream(ainput)] == [1, 2, 3]
 
-    @pytest.mark.anyio
-    async def test_to_pipe(self, ainput: AsyncIterable[int]):
-        p = (await astream(ainput).to_pipe()) | map_(add_one) | sum
-        assert isinstance(p, Pipeline)
-        assert p.run() == 9
-
-    @pytest.mark.anyio
-    async def test_to_apipe(self, ainput: AsyncIterable[int]):
-        ap = (await astream(ainput).to_apipe()) | amap(wait_and_add_one) | sum
-        assert isinstance(ap, AsyncPipeline)
-        assert await ap.run() == 9
-
-    class TestCollect:
+    class TestMaterialization:
         @pytest.mark.anyio
         async def test_collect(self, ainput: AsyncIterable[int]):
             assert await astream(ainput).collect() == [1, 2, 3]
@@ -67,6 +54,13 @@ class TestAsyncStream:
             )
             assert isinstance(apipeline, AsyncPipeline)
             assert await apipeline.run() == 10
+
+        @pytest.mark.anyio
+        async def test_pipe(self, ainput: AsyncIterable[int]):
+            result = await astream(ainput).pipe(
+                lambda p: p.then(map_(lambda x: x + 1)).then(sum)
+            )
+            assert result == 9
 
     class TestMap:
         @pytest.mark.anyio

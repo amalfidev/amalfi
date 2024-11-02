@@ -6,7 +6,7 @@ from typing import Any, AsyncIterable, AsyncIterator, Iterable, cast, overload
 from amalfi.ops.tap import atap
 
 from ..core import AsyncFn, AsyncTFn, AsyncVFn, Fn, TFn, VFn, as_async
-from ..pipeline import AsyncPipeline, Pipeline, apipe, pipe
+from ..pipeline import AsyncPipeline, apipe
 
 
 class AsyncStream[I]:
@@ -58,15 +58,7 @@ class AsyncStream[I]:
         """Return a string representation of the async stream"""
         return f"AsyncStream({self._aiter.__repr__()})"
 
-    async def to_pipe(self) -> Pipeline[Iterable[I], Iterable[I]]:
-        """Convert the async stream to a pipeline."""
-        return pipe(await self.collect())
-
-    async def to_apipe(self) -> AsyncPipeline[Iterable[I], Iterable[I]]:
-        """Convert the stream to an async pipeline."""
-        return apipe(await self.collect())
-
-    # region: --collect
+    # region: --materialization
     @overload
     async def collect(self, into: None = None) -> list[I]: ...
 
@@ -75,21 +67,21 @@ class AsyncStream[I]:
 
     async def collect[T](self, into: Fn[Iterable[I], T] | None = None) -> T | list[I]:
         """
-            Execute the stream on the input and collect the results into a custom
-            collector function, which defaults to a list.
+        Execute the stream on the input and collect the results into a custom
+        collector function, which defaults to a list.
 
-            This method will consume the stream and return the collected result.
-            If the stream is infinite, this method will never return.
+        This method will consume the stream and return the collected result.
+        If the stream is infinite, this method will never return.
 
-            A custom collector can be passed. It should be a function that takes an
-            iterable and returns the desired type `T`. It defaults to a list.
+        A custom collector can be passed. It should be a function that takes an
+        iterable and returns the desired type `T`. It defaults to a list.
 
-            Args:
-                into (Fn[Iterable[I], T] | None): An optional custom collector function,
-                which defaults to a list.
+        Args:
+            into (Fn[Iterable[I], T] | None): An optional custom collector function,
+            which defaults to a list.
 
-            Returns:
-                T | list[I]: The collected result of the stream.
+        Returns:
+            T | list[I]: The collected result of the stream.
 
         Examples
         --------
@@ -108,7 +100,36 @@ class AsyncStream[I]:
         collected = [i async for i in self]
         return collected if not into else into(collected)
 
-    # endregion --collect
+    async def pipe[O](
+        self,
+        then: Fn[
+            AsyncPipeline[Iterable[I], Iterable[I]],
+            AsyncPipeline[Iterable[I], O],
+        ],
+    ) -> O:
+        """
+        Collects the stream and reduces it using an async pipeline. The pipeline
+        can be further transformed by the `then` function.
+
+        Args:
+            then (Fn[AsyncPipeline[
+                Iterable[I], Iterable[I]],
+                AsyncPipeline[Iterable[I], O]]
+            ): A function that takes an async pipeline and returns a transformed
+            async pipeline.
+
+        Returns:
+            O: The result of the pipeline.
+
+        Examples
+        --------
+        >>> result = await astream([1, 2, 3]).map(lambda x: x + 1).pipe()
+        [2, 3, 4]
+        """
+        collected = await self.collect()
+        return await then(apipe(collected)).run()
+
+    # endregion --materialization
 
     # region: --ops
     def map[O](self, fn: Fn[I, O] | AsyncFn[I, O]) -> AsyncStream[O]:
@@ -315,20 +336,20 @@ class AsyncStream[I]:
 
         return AsyncStream(astarmapper())
 
-    def zip_with[O](self, other: AsyncIterable[O]) -> AsyncStream[tuple[I, O]]:
-        """Zip two streams together."""
+    # def zip_with[O](self, other: AsyncIterable[O]) -> AsyncStream[tuple[I, O]]:
+    #     """Zip two streams together."""
 
-        async def azip_with() -> AsyncIterator[tuple[I, O]]:
-            it1, it2 = self.__aiter__(), other.__aiter__()
-            while True:
-                try:
-                    i = await it1.__anext__()
-                    o = await it2.__anext__()
-                    yield i, o
-                except StopAsyncIteration:
-                    break
+    #     async def azip_with() -> AsyncIterator[tuple[I, O]]:
+    #         it1, it2 = self.__aiter__(), other.__aiter__()
+    #         while True:
+    #             try:
+    #                 i = await it1.__anext__()
+    #                 o = await it2.__anext__()
+    #                 yield i, o
+    #             except StopAsyncIteration:
+    #                 break
 
-        return AsyncStream(azip_with())
+    #     return AsyncStream(azip_with())
 
     # endregion --ops
 
