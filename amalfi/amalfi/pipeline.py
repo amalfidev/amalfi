@@ -383,8 +383,8 @@ class AsyncPipeline[I, O]:
         Examples
         --------
         >>> async def wait_and_add_one(x: int) -> int:
-                await asyncio.sleep(0.001)
-                return x + 1
+        ...     await asyncio.sleep(0.001)
+        ...     return x + 1
         >>> pipeline_a = apipe(3) | wait_and_add_one
         >>> pipeline_b = apipe(4) | lambda x: x * 2
         >>> concat_pipeline = pipeline_a > pipeline_b  # (3 + 1) * 2 = 8

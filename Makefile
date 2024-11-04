@@ -76,7 +76,8 @@ ifeq ($(name),)
 	@echo "Available examples:"
 	@echo "  pipelines"
 	@echo "  stream"
-	@echo "  etl_users_and_activities"
+	@echo "  etl_stream_users_and_activities"
+	@echo "  etl_pipe_users_and_activities"
 
 	@exit 1
 endif
@@ -92,6 +93,10 @@ ifeq ($(name),stream)
 endif
 
 # ETL
-ifeq ($(name),etl_users_and_activities)
-	poetry run python $(EXAMPLES_DIR)/etl/etl_users_and_activities.py
+ifeq ($(name),etl_stream_users_and_activities)
+	poetry run python $(EXAMPLES_DIR)/etl/etl_stream_users_and_activities.py
+endif
+
+ifeq ($(name),etl_pipe_users_and_activities)
+	poetry run python $(EXAMPLES_DIR)/etl/etl_pipe_users_and_activities.py
 endif
