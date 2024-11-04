@@ -169,18 +169,25 @@ class TestAsyncStream:
             assert await s.collect() == [6]
 
     class TestStarmap:
+        async def apairs(self):
+            await asyncio.sleep(0.001)
+            yield (1, 2)
+            yield (3, 4)
+            yield (5, 6)
+
         @pytest.mark.anyio
         @pytest.mark.parametrize("fn", [wait_and_multiply, multiply])
         async def test_starmap(
             self,
             fn: TFn[*tuple[int, int], int] | AsyncTFn[*tuple[int, int], int],
         ):
-            async def apairs():
-                await asyncio.sleep(0.001)
-                yield (1, 2)
-                yield (3, 4)
-                yield (5, 6)
-
-            s = astream(apairs()).starmap(fn)
+            s = astream(self.apairs()).starmap(fn)
             assert isinstance(s, AsyncStream)
             assert await s.collect() == [2, 12, 30]
+
+        @pytest.mark.anyio
+        async def test_starmap_with_lambda(self):
+            lambda_fn: TFn[int, int, int] = lambda x, y: x + y  # noqa: E731
+            s = astream(self.apairs()).starmap(lambda_fn)
+            assert isinstance(s, AsyncStream)
+            assert await s.collect() == [3, 7, 11]

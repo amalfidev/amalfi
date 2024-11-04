@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from inspect import isawaitable
 from typing import Any, AsyncIterable, AsyncIterator, Iterable, cast, overload
 
 from amalfi.ops.tap import atap
@@ -105,7 +106,7 @@ class AsyncStream[I]:
         then: Fn[
             AsyncPipeline[Iterable[I], Iterable[I]],
             AsyncPipeline[Iterable[I], O],
-        ],
+        ] = lambda p: p,
     ) -> O:
         """
         Collects the stream and reduces it using an async pipeline. The pipeline
@@ -137,6 +138,13 @@ class AsyncStream[I]:
         Adds a mapping step to the stream, returning a new stream of the
         mapped values. The mapping function can be either synchronous or
         asynchronous.
+
+        Args:
+            fn (Fn[I, O] | AsyncFn[I, O]): A synchronous or asynchronous mapping
+            function.
+
+        Returns:
+            AsyncStream[O]: a new stream of the mapped values
 
         Examples
         --------
@@ -321,6 +329,13 @@ class AsyncStream[I]:
 
         Raises:
             ValueError: If the input is not an iterable of tuples
+
+        Examples
+        --------
+        >>> result = await astream([(1, 2), (3, 4)]) \
+                    .starmap(lambda x, y: x + y) \
+                    .collect()
+        [3, 7]
         """
 
         async def astarmapper() -> AsyncIterator[O]:
@@ -336,20 +351,121 @@ class AsyncStream[I]:
 
         return AsyncStream(astarmapper())
 
-    # def zip_with[O](self, other: AsyncIterable[O]) -> AsyncStream[tuple[I, O]]:
-    #     """Zip two streams together."""
+    def await_(self) -> AsyncStream[I]:
+        """
+        Await the stream item.
 
-    #     async def azip_with() -> AsyncIterator[tuple[I, O]]:
-    #         it1, it2 = self.__aiter__(), other.__aiter__()
-    #         while True:
-    #             try:
-    #                 i = await it1.__anext__()
-    #                 o = await it2.__anext__()
-    #                 yield i, o
-    #             except StopAsyncIteration:
-    #                 break
+        If the item is awaitable, it is awaited and the result is yielded.
+        Otherwise, the item is yielded as is.
 
-    #     return AsyncStream(azip_with())
+        Useful to await the stream items when they are coroutines or awaitables
+        and the `await` keyword is not available.
+
+        Examples
+        --------
+        >>> async def wait_and_double(x: int) -> int:
+        ...     await asyncio.sleep(0.000001)
+        ...     return x * 2
+        >>> async def numbers() -> AsyncIterator[int]:
+        ...     yield 1
+        ...     yield wait_and_double(2)
+        ...     yield 3
+        >>> result = await astream(numbers()).await_().map(lambda x: x + 1).collect()
+        [2, 5, 4]
+        """
+
+        async def awaiter():
+            async for item in self:
+                if isawaitable(item):
+                    yield cast(I, await item)
+                else:
+                    yield cast(I, item)
+
+        return AsyncStream(awaiter())
+
+    def chunk(
+        self,
+        size: int | None = None,
+    ) -> AsyncStream[list[I]]:
+        """Gather the stream into a list of chunks. If `size` is `None`, the entire
+        stream is collected into a single chunk.
+
+        Args:
+            size (int): The size of each chunk.
+
+        Returns:
+            AsyncStream[list[I]]: A new async stream yielding chunks of items.
+
+        Examples
+        --------
+        >>> async def numbers() -> AsyncIterator[int]:
+        ...     await asyncio.sleep(0.000001)
+        ...     yield from [1, 2, 3, 4, 5]
+        >>> result = await astream(numbers()).chunk(size=2).collect()
+        [[1, 2], [3, 4], [5]]
+        >>> result = await astream(numbers()).chunk().collect()
+        [[1, 2, 3, 4, 5]]
+        """
+
+        async def chunker() -> AsyncIterator[list[I]]:
+            if not size:
+                chunk: list[I] = [item async for item in self]
+                if chunk:
+                    yield chunk
+            else:
+                assert size > 0, ValueError("Chunk size must be positive")
+                chunk: list[I] = []
+                async for item in self:
+                    chunk.append(item)
+                    if len(chunk) == size:
+                        yield chunk
+                        chunk = []
+                if chunk:
+                    yield chunk
+
+        return AsyncStream(chunker())
+
+    def mapzip[*O](
+        self,
+        fn: Fn[I, O] | AsyncFn[I, O],
+    ) -> AsyncStream[tuple[I, *O]]:
+        """Extend a stream with a tuple of functions that transform the stream items.
+
+        The functions are applied in parallel, and the results are zipped together.
+        If any function is asynchronous, the processing is awaited and the results
+        are zipped together.
+
+        Examples
+        --------
+        >>> async def wait_and_double(x: int) -> int:
+                await asyncio.sleep(0.000001)
+                return x * 2
+        >>> result = await astream([1, 2, 3]) \
+                    .zipmap(lambda x: str(x)) \
+                    .collect()
+        [(1, '1'), (2, '2'), (3, '3')]
+        """
+
+        async def mapzipper() -> AsyncIterator[tuple[I, *O]]:
+            async for item in self:
+                yield item, (await as_async(fn)(item))
+
+        return AsyncStream(mapzipper())
+
+    def zip_with[O](self, other: AsyncIterable[O]) -> AsyncStream[tuple[I, O]]:
+        """Zip two streams together."""
+
+        async def azip_with() -> AsyncIterator[tuple[I, O]]:
+            it1, it2 = self.__aiter__(), other.__aiter__()
+            while True:
+                try:
+                    i = await it1.__anext__()
+                    o = await it2.__anext__()
+                    yield i, o
+                except StopAsyncIteration:
+                    break
+
+        return AsyncStream(azip_with())
 
     # endregion --ops
 

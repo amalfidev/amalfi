@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime
-from typing import Self
+from typing import Iterable, Self
 from uuid import uuid4
 
 from faker import Faker
@@ -31,6 +31,10 @@ class User(BaseModel):
             country=fake.country_code(),
         )
 
+    def add_activities(self, activities: Iterable[Activity]) -> Self:
+        self.activities.extend(activities)
+        return self
+
 
 class Activity(BaseModel):
     id: str
@@ -56,7 +60,7 @@ async def read_users_from_json_file():
         yield user.model_dump()
 
 
-async def fetch_user_activities_from_database(user_id: str):
+async def fetch_activities_from_db(user_id: str):
     """Simulates a slow IO operation."""
     total_activities = fake.random_int(min=10, max=20)
     await asyncio.sleep(0.000001)
@@ -64,8 +68,8 @@ async def fetch_user_activities_from_database(user_id: str):
         yield activity.model_dump()
 
 
-async def augment_user_with_activities(user: User):
-    return await astream(fetch_user_activities_from_database(user.id)).pipe(
+async def append_activities_to_users(user: User):
+    return await astream(fetch_activities_from_db(user.id)).pipe(
         lambda p: p.then(map_(Activity.model_validate))
         .then(lambda a: {"activities": a})
         .then(lambda a: User.model_validate(user.model_dump() | a))
@@ -79,11 +83,19 @@ async def write_users_to_json_file(users: list[User]):
 
 
 async def main():
+    def add_activities_to_users(user: User, activities: list[Activity]) -> User:
+        return user.add_activities(activities)
+
     user_stream = (
         astream(read_users_from_json_file())
         .map(User.model_validate)
-        .filter(lambda u: u.country in ["IT"])
-        .map(augment_user_with_activities)
+        .filter(lambda user: user.country in ["IT"])
+        .mapzip(
+            lambda user: astream(fetch_activities_from_db(user.id))
+            .map(Activity.model_validate)
+            .collect()
+        )
+        .starmap(add_activities_to_users)
         .tap(lambda u: print(f"{u.name} ({len(u.activities)} activities)"))
     )
 

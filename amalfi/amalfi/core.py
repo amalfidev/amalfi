@@ -102,7 +102,7 @@ def as_async[I, O](fn: Fn[I, O] | AsyncFn[I, O]) -> AsyncFn[I, O]:
 
     async def async_fn(x: I) -> O:
         result = (await fn(x)) if inspect.iscoroutinefunction(fn) else fn(x)
-        return cast(O, result)
+        return cast(O, result if not isinstance(result, Coroutine) else await result)
 
     return async_fn
 
