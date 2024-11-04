@@ -4,7 +4,7 @@ from typing import Generator, Iterable, Literal, overload
 from amalfi.core import AsyncFn, AsyncTFn, Fn, TFn
 
 
-def starmap[*I, O](fn: TFn[*I, O]) -> Fn[Iterable[tuple[*I]], Iterable[O]]:
+def starmap_[*I, O](fn: TFn[*I, O]) -> Fn[Iterable[tuple[*I]], Iterable[O]]:
     """
     Apply a sync tuple-unpacking function to each element of an iterable,
     yielding the mapped values.
@@ -83,6 +83,6 @@ def astarmap[*I, O](
     async def async_starmapper(
         iterable: Iterable[tuple[*I]],
     ) -> list[O] | list[O | BaseException]:
-        return await asyncio.gather(*starmap(fn)(iterable), return_exceptions=safe)
+        return await asyncio.gather(*starmap_(fn)(iterable), return_exceptions=safe)
 
     return async_starmapper
