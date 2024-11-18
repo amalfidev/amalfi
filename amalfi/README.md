@@ -12,13 +12,14 @@
     - [`AsyncIterFn`: The Asynchronous Iterable Function Type](#asynciterfn-the-asynchronous-iterable-function-type)
   - [Pipelining](#pipelining)
     - [Pipelines](#pipelines)
-  - [Operators](#operators)
-    - [Map](#map)
     - [Filtering](#filtering)
     - [Reducing](#reducing)
     - [Collecting](#collecting)
     - [Tapping](#tapping)
     - [Starmap](#starmap)
+  - [Streaming](#streaming)
+    - [Streams](#streams)
+    - [AsyncStreams](#asyncstreams)
   - [Utilities](#utilities)
     - [`as_async`: Convert a function from sync to async](#as_async-convert-a-function-from-sync-to-async)
     - [TODO:](#todo)
@@ -107,6 +108,90 @@ A type alias for an asynchronous function that takes an iterable of type `Iterab
 - **pipe / pipe_async**: Initialize pipelines with an input value.
 - **`|` Operator**: Use the bitwise OR operator to chain functions in a pipeline.
 - **step**: Add a function to the pipeline.
+
+**Examples**
+
+  Basic usage with integer transformations:
+
+  ```python
+  from amalfi.pipeline import pipe, Pipeline
+
+  def add_one(x: int) -> int:
+      return x + 1
+
+  def multiply_by_two(x: int) -> int:
+      return x * 2
+
+  # Create a pipeline that adds one and then multiplies by two
+  my_pipeline = Pipeline.pipe(3) | add_one | multiply_by_two
+  # or
+  my_pipeline = pipe(3) | add_one | multiply_by_two
+  # or
+  my_pipeline = pipe(3).then(add_one).then(multiply_by_two)
+
+  result = my_pipeline()  # (3 + 1) * 2 = 8
+  print(result)  # Output: 8
+  ```
+
+  Chaining multiple functions with different return types:
+
+  ```python
+  from amalfi.pipeline import pipe
+
+  def square(x: int) -> int:
+      return x * x
+
+  def to_string(x: int) -> str:
+      return f"Result is {x}"
+
+  def shout(s: str) -> str:
+      return s.upper() + "!"
+
+  # Create a pipeline that squares a number, converts to string, and shouts it
+  my_pipeline = pipe(5) | square | to_string | shout
+  # or
+  my_pipeline = Pipeline(5) | square | to_string | shout
+  # or
+  my_pipeline = pipe(5).then(square).then(to_string).then(shout)
+
+  result = my_pipeline()  # Square 5, convert, and shout
+  print(result)  # Output: "RESULT IS 25!"
+  ```
+
+  Using built-in functions within the pipeline:
+
+  ```python
+  from amalfi.pipeline import pipe
+
+  # Create a pipeline that converts to string and gets the length
+  my_pipeline = pipe(12345) | str | len
+
+  result = my_pipeline()
+  print(result)  # Output: 5
+  ```
+
+  Using async functions within the pipeline:
+  
+  ```python
+    from amalfi.pipeline import apipe, AsyncPipeline
+    import asyncio
+
+    def add_one(x: int) -> int:
+        return x + 1
+
+    async def multiply_by_two(x: int) -> int:
+        await asyncio.sleep(0.001)  # Simulate async operation
+        return x * 2
+
+    # Create an async pipeline that adds one and then multiplies by two
+    my_pipeline = apipe(3) | add_one | multiply_by_two
+    # or
+    my_pipeline = apipe(3) | add_one | multiply_by_two
+    # or
+    my_pipeline = apipe(3).then(add_one).then(multiply_by_two)
+
+    result = asyncio.run(my_pipeline())  # (3 + 1) * 2 = 8
+    print(result)  # Output: 8
 
 ## Operators
 ### Map
@@ -254,6 +339,50 @@ async def async_multiply(x: int, y: int) -> int:
 result = await apipe([(1, 2), (3, 4), (5, 6)]) | astarmap(async_multiply) | sum
 print(result) # Output: 42 (after 0.3s) 
 ```
+
+## Streaming
+TODO: add docs
+
+### Streams
+TODO: add docs
+
+```python
+from amalfi.stream import stream
+
+def add_one(x: int) -> int:
+    return x + 1
+
+def multiply_by_two(x: int) -> int:
+    return x * 2
+
+# Create a stream that adds one and then multiplies by two
+result = (
+    stream([1, 2, 3, 4, 5])
+        .map(add_one)
+        .filter(lambda x: x % 2 == 0)
+        .take(2)
+        .collect()
+    )
+assert result == [2, 4]
+```
+
+### AsyncStreams
+TODO: add docs
+TODO: add examples
+
+Basic usage with integer transformations:
+
+```python
+from amalfi.stream import astream
+
+async def adouble(x: int) -> int:
+    await asyncio.sleep(1) # Simulate async work
+    return x * 2
+
+result = await astream([1, 2, 3]).map(adouble).take(2).collect()
+assert result == [2, 4]
+```
+
 
 ## Utilities
 The following utilities are useful to work with functions and are used throughout the library as well. They can become handy when working with the library in a type-safe manner.

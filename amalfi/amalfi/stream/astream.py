@@ -26,21 +26,6 @@ class AsyncStream[I]:
 
     Attributes:
     - `input`: The input iterable to the stream, to be transformed by the functions.
-
-    Examples
-    --------
-
-    Basic usage with integer transformations:
-
-    ```python
-    from amalfi.stream import astream
-
-    async def adouble(x: int) -> int:
-        await asyncio.sleep(1) # Simulate async work
-        return x * 2
-
-    result = await astream([1, 2, 3]).map(adouble).take(2).collect()
-    assert result == [2, 4]
     ```
     """
 
@@ -80,23 +65,6 @@ class AsyncStream[I]:
         Args:
             into (Fn[Iterable[I], T] | None): An optional custom collector function,
             which defaults to a list.
-
-        Returns:
-            T | list[I]: The collected result of the stream.
-
-        Examples
-        --------
-        >>> result = await astream([1, 2, 3]).map(lambda x: x + 1).collect()
-        >>> assert result == [2, 3, 4]
-
-        >>> result = await (
-                        astream([1, 2, 3])
-                            .map(lambda x: x + 1)
-                            .filter(lambda x: x % 2 == 0)
-                            .take(2)
-                            .collect(into=tuple)
-                    )
-        >>> assert result == (2, 4)
         """
         collected = [i async for i in self]
         return collected if not into else into(collected)
@@ -118,14 +86,6 @@ class AsyncStream[I]:
                 AsyncPipeline[Iterable[I], O]]
             ): A function that takes an async pipeline and returns a transformed
             async pipeline.
-
-        Returns:
-            O: The result of the pipeline.
-
-        Examples
-        --------
-        >>> result = await astream([1, 2, 3]).map(lambda x: x + 1).pipe()
-        [2, 3, 4]
         """
         collected = await self.collect()
         return await then(apipe(collected)).run()
@@ -137,20 +97,11 @@ class AsyncStream[I]:
         """
         Adds a mapping step to the stream, returning a new stream of the
         mapped values. The mapping function can be either synchronous or
-        asynchronous.
+        asynchronous. Returns a new stream of the mapped values.
 
         Args:
             fn (Fn[I, O] | AsyncFn[I, O]): A synchronous or asynchronous mapping
             function.
-
-        Returns:
-            AsyncStream[O]: a new stream of the mapped values
-
-        Examples
-        --------
-
-        >>> result = await astream([1, 2, 3]).map(lambda x: x + 1).collect()
-        [2, 3, 4]
         """
 
         async def amap():
@@ -168,16 +119,6 @@ class AsyncStream[I]:
             fn (Fn[I, bool] | AsyncFn[I, bool] | None): A synchronous or asynchronous
             filtering function. If `None` is passed, the stream will be filtered to
             exclude `None` values.
-
-        Returns:
-            AsyncStream[I]: a new stream of the filtered values
-
-        Examples
-        --------
-        >>> result = await astream([1, 2, 3]).filter(lambda x: x % 2 == 0).collect()
-        [2]
-        >>> result = await astream([1, None, 3]).filter(None).collect()
-        [1, 3]
         """
 
         async def afilter():
@@ -197,19 +138,6 @@ class AsyncStream[I]:
 
         Args:
             n (int): The maximum number of items to take from the stream.
-
-        Returns:
-            AsyncStream[I]: A new stream containing at most `n` items from the
-            original stream.
-
-        Examples
-        --------
-        >>> result = await astream([1, 2, 3, 4]).take(2).collect()
-        [1, 2]
-        >>> result = await astream([1]).take(3).collect()
-        [1]
-        >>> result = await astream([]).take(2).collect()
-        []
         """
 
         async def atake() -> AsyncIterator[I]:
@@ -230,15 +158,6 @@ class AsyncStream[I]:
         Args:
             fn (Fn[I, bool] | AsyncFn[I, bool]): A synchronous or asynchronous
             predicate function.
-
-        Returns:
-            AsyncStream[I]: A new stream containing the values taken while the
-            predicate is true.
-
-        Examples
-        --------
-        >>> result = await astream([1, 2, 3, 4]).take_while(lambda x: x < 3).collect()
-        [1, 2]
         """
 
         async def atake_while() -> AsyncIterator[I]:
@@ -249,22 +168,12 @@ class AsyncStream[I]:
 
         return AsyncStream(atake_while())
 
-    def default(self, default: I) -> AsyncStream[I]:
+    def default(self, default_value: I) -> AsyncStream[I]:
         """
         Returns a stream with the default value if the stream is empty.
 
         Args:
-            default (I): The default value to return if the stream is empty
-
-        Returns:
-            AsyncStream[I]: a new stream with the default value if the stream is empty
-
-        Examples
-        --------
-        >>> result = await astream(ayield_range(1, 4)).default(0).collect()
-        [1, 2, 3]
-        >>> result = await astream(ayield_range(1, 1)).default(0).collect()
-        [0]
+            default_value (I): The default value to return if the stream is empty
         """
 
         async def adefault() -> AsyncIterator[I]:
@@ -273,7 +182,7 @@ class AsyncStream[I]:
                 is_empty = False
                 yield item
             if is_empty:
-                yield default
+                yield default_value
 
         return AsyncStream(adefault())
 
@@ -282,14 +191,9 @@ class AsyncStream[I]:
         Perform a synchronous or asynchronous side effect within a stream without
         altering the data flow.
 
-        Examples
-        --------
-        >>> result = await astream([1, 2, 3]).tap(print).collect()
-        1
-        2
-        3
-        >>> print(result)
-        [1, 2, 3]
+        Args:
+            fn (Fn[I, Any] | AsyncFn[I, Any]): A synchronous or asynchronous side
+            effect function.
         """
         return self.map(atap(as_async(fn)))
 
@@ -298,6 +202,12 @@ class AsyncStream[I]:
     ) -> AsyncStream[O]:
         """
         Reduce or fold the stream to a single value using a reducer function.
+        Returns a new stream of the reduced value.
+
+        Args:
+            fn (VFn[[O, I], O] | AsyncVFn[[O, I], O]): A synchronous or asynchronous
+            reducer function.
+            initial (O): The initial value for the reduction.
         """
 
         async def areducer() -> AsyncIterator[O]:
@@ -324,18 +234,8 @@ class AsyncStream[I]:
             fn (TFn[*P, O] | AsyncTFn[*P, O]): A synchronous or asynchronous
             tuple-unpacking function
 
-        Returns:
-            AsyncStream[O]: a new stream of the mapped values
-
         Raises:
             ValueError: If the input is not an iterable of tuples
-
-        Examples
-        --------
-        >>> result = await astream([(1, 2), (3, 4)]) \
-                    .starmap(lambda x, y: x + y) \
-                    .collect()
-        [3, 7]
         """
 
         async def astarmapper() -> AsyncIterator[O]:
@@ -358,20 +258,9 @@ class AsyncStream[I]:
         If the item is awaitable, it is awaited and the result is yielded.
         Otherwise, the item is yielded as is.
 
-        Useful to await the stream items when they are coroutines or awaitables
+        Notes:
+        - Useful to await the stream items when they are coroutines or awaitables
         and the `await` keyword is not available.
-
-        Examples
-        --------
-        >>> async def wait_and_double(x: int) -> int:
-        ...     await asyncio.sleep(0.000001)
-        ...     return x * 2
-        >>> async def numbers() -> AsyncIterator[int]:
-        ...     yield 1
-        ...     yield wait_and_double(2)
-        ...     yield 3
-        >>> result = await astream(numbers()).await_().map(lambda x: x + 1).collect()
-        [2, 5, 4]
         """
 
         async def awaiter():
@@ -392,19 +281,6 @@ class AsyncStream[I]:
 
         Args:
             size (int): The size of each chunk.
-
-        Returns:
-            AsyncStream[list[I]]: A new async stream yielding chunks of items.
-
-        Examples
-        --------
-        >>> async def numbers() -> AsyncIterator[int]:
-        ...     await asyncio.sleep(0.000001)
-        ...     yield from [1, 2, 3, 4, 5]
-        >>> result = await astream(numbers()).chunk(size=2).collect()
-        [[1, 2], [3, 4], [5]]
-        >>> result = await astream(numbers()).chunk().collect()
-        [[1, 2, 3, 4, 5]]
         """
 
         async def chunker() -> AsyncIterator[list[I]]:
@@ -435,15 +311,8 @@ class AsyncStream[I]:
         If any function is asynchronous, the processing is awaited and the results
         are zipped together.
 
-        Examples
-        --------
-        >>> async def wait_and_double(x: int) -> int:
-                await asyncio.sleep(0.000001)
-                return x * 2
-        >>> result = await astream([1, 2, 3]) \
-                    .zipmap(lambda x: str(x)) \
-                    .collect()
-        [(1, '1'), (2, '2'), (3, '3')]
+        Args:
+            fn (Fn[I, O] | AsyncFn[I, O]): A synchronous or asynchronous function
         """
 
         async def mapzipper() -> AsyncIterator[tuple[I, *O]]:
