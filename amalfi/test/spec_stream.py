@@ -3,12 +3,13 @@ from typing import Iterable
 
 import pytest
 
+from amalfi.core import VFn
 from amalfi.ops import map_
 from amalfi.ops.map import amap
 from amalfi.pipeline import AsyncPipeline, Pipeline, pipe
 from amalfi.stream import AsyncStream, Stream, stream
 
-from .stub import add_one, double, wait_and_add_one, yield_range
+from .stub import add_one, double, multiply, wait_and_add_one, yield_range
 
 
 @pytest.fixture
@@ -82,7 +83,7 @@ class TestStream:
 
         def test_collect_into_pipeline(self, input: Iterable[int]):
             pipeline = (
-                stream(input).collect(into=pipe).step(map_(lambda x: x + 1)).step(sum)
+                stream(input).collect(into=pipe).then(map_(lambda x: x + 1)).then(sum)
             )
             assert isinstance(pipeline, Pipeline)
             assert pipeline.run() == 9
@@ -139,3 +140,36 @@ class TestStream:
             s = Stream[int]([]).default(0)
             assert isinstance(s, Stream)
             assert s.collect() == [0]
+
+    class TestTap:
+        def test_tap(self, input: Iterable[int]):
+            numbers: list[int] = []
+
+            def side_effect(y: int):
+                print(y)
+                numbers.append(y)
+
+            s = stream(input).tap(side_effect)
+            assert isinstance(s, Stream)
+            assert s.collect() == [1, 2, 3]
+            assert numbers == [1, 2, 3]
+
+    class TestReduce:
+        def test_reduce(self, input: Iterable[int]):
+            add: VFn[[int, int], int] = lambda x, y: x + y  # noqa: E731
+
+            s = stream(input).reduce(add, 0)
+            assert isinstance(s, Stream)
+            assert next(iter(s)) == 6
+
+    class TestStarmap:
+        def test_starmap(self):
+            s = stream([(1, 2), (3, 4), (5, 6)]).starmap(multiply)
+            assert isinstance(s, Stream)
+            assert s.collect() == [2, 12, 30]
+
+        def test_starmap_with_non_tuple_input(self):
+            s = stream([1, 2, 3]).starmap(multiply)
+            assert isinstance(s, Stream)
+            with pytest.raises(ValueError):
+                s.collect()

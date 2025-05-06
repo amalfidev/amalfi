@@ -70,6 +70,33 @@ publish:
 # Run example
 example:
 	@echo "\nRunning examples for $(name)..."
+ifeq ($(name),)
+	@echo "No example name specified."
+	@echo "Usage: make example name=<example_name>"
+	@echo "Available examples:"
+	@echo "  pipelines"
+	@echo "  stream"
+	@echo "  etl_stream_users_and_activities"
+	@echo "  etl_pipe_users_and_activities"
+
+	@exit 1
+endif
+
+# Pipelines
+ifeq ($(name),pipelines)
+	poetry run python $(EXAMPLES_DIR)/pipelines.py
+endif
+
+# Streams
 ifeq ($(name),stream)
 	poetry run python $(EXAMPLES_DIR)/streams/__init__.py
+endif
+
+# ETL
+ifeq ($(name),etl_stream_users_and_activities)
+	poetry run python $(EXAMPLES_DIR)/etl/etl_stream_users_and_activities.py
+endif
+
+ifeq ($(name),etl_pipe_users_and_activities)
+	poetry run python $(EXAMPLES_DIR)/etl/etl_pipe_users_and_activities.py
 endif

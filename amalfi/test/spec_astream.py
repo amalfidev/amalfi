@@ -3,12 +3,19 @@ from typing import AsyncIterable
 
 import pytest
 
+from amalfi.core import AsyncTFn, TFn, as_async
 from amalfi.ops import map_
-from amalfi.ops.map import amap
-from amalfi.pipeline import AsyncPipeline, Pipeline, pipe
+from amalfi.pipeline import AsyncPipeline, pipe
 from amalfi.stream import AsyncStream, astream
 
-from .stub import add_one, ayield_range, wait_and_add_one, wait_and_double
+from .stub import (
+    add_one,
+    ayield_range,
+    multiply,
+    wait_and_add_one,
+    wait_and_double,
+    wait_and_multiply,
+)
 
 
 @pytest.fixture
@@ -26,19 +33,7 @@ class TestAsyncStream:
     async def test_alias(self, ainput: AsyncIterable[int]):
         assert [i async for i in astream(ainput)] == [1, 2, 3]
 
-    @pytest.mark.anyio
-    async def test_to_pipe(self, ainput: AsyncIterable[int]):
-        p = (await astream(ainput).to_pipe()) | map_(add_one) | sum
-        assert isinstance(p, Pipeline)
-        assert p.run() == 9
-
-    @pytest.mark.anyio
-    async def test_to_apipe(self, ainput: AsyncIterable[int]):
-        ap = (await astream(ainput).to_apipe()) | amap(wait_and_add_one) | sum
-        assert isinstance(ap, AsyncPipeline)
-        assert await ap.run() == 9
-
-    class TestCollect:
+    class TestMaterialization:
         @pytest.mark.anyio
         async def test_collect(self, ainput: AsyncIterable[int]):
             assert await astream(ainput).collect() == [1, 2, 3]
@@ -52,13 +47,20 @@ class TestAsyncStream:
         async def test_collect_into_pipeline(self, ainput: AsyncIterable[int]):
             apipeline = (
                 (await astream(ainput).collect(into=pipe))
-                .step(map_(lambda x: x + 1))
-                .step(sum)
+                .then(map_(lambda x: x + 1))
+                .then(sum)
                 .to_async()
-                .step(wait_and_add_one)
+                .then(wait_and_add_one)
             )
             assert isinstance(apipeline, AsyncPipeline)
             assert await apipeline.run() == 10
+
+        @pytest.mark.anyio
+        async def test_pipe(self, ainput: AsyncIterable[int]):
+            result = await astream(ainput).pipe(
+                lambda p: p.then(map_(lambda x: x + 1)).then(sum)
+            )
+            assert result == 9
 
     class TestMap:
         @pytest.mark.anyio
@@ -127,7 +129,65 @@ class TestAsyncStream:
             assert await s.collect() == [1, 2, 3]
 
         @pytest.mark.anyio
-        async def test_default_if_empty_empty(self):
+        async def test_default_empty(self):
             s = astream(ayield_range(1, 1)).default(0)
             assert isinstance(s, AsyncStream)
             assert await s.collect() == [0]
+
+    class TestTap:
+        @pytest.mark.anyio
+        async def test_tap(self, ainput: AsyncIterable[int]):
+            numbers: list[int] = []
+            s = astream(ainput).tap(lambda x: numbers.append(x))
+            assert isinstance(s, AsyncStream)
+            assert await s.collect() == [1, 2, 3]
+            assert numbers == [1, 2, 3]
+
+        @pytest.mark.anyio
+        async def test_atap(self, ainput: AsyncIterable[int]):
+            numbers: list[int] = []
+            s = astream(ainput).tap(as_async(lambda x: numbers.append(x)))
+            assert isinstance(s, AsyncStream)
+            assert await s.collect() == [1, 2, 3]
+            assert numbers == [1, 2, 3]
+
+    class TestReduce:
+        @pytest.mark.anyio
+        async def test_reduce(self, ainput: AsyncIterable[int]):
+            async def wait_and_add(x: int, y: int) -> int:
+                await asyncio.sleep(0.001)
+                return x + y
+
+            s = astream(ainput).reduce(wait_and_add, 0)
+            assert isinstance(s, AsyncStream)
+            assert await s.collect() == [6]
+
+        @pytest.mark.anyio
+        async def test_reduce_with_sync_fn(self, ainput: AsyncIterable[int]):
+            s = astream(ainput).reduce(lambda x, y: x + y, 0)
+            assert isinstance(s, AsyncStream)
+            assert await s.collect() == [6]
+
+    class TestStarmap:
+        async def apairs(self):
+            await asyncio.sleep(0.001)
+            yield (1, 2)
+            yield (3, 4)
+            yield (5, 6)
+
+        @pytest.mark.anyio
+        @pytest.mark.parametrize("fn", [wait_and_multiply, multiply])
+        async def test_starmap(
+            self,
+            fn: TFn[*tuple[int, int], int] | AsyncTFn[*tuple[int, int], int],
+        ):
+            s = astream(self.apairs()).starmap(fn)
+            assert isinstance(s, AsyncStream)
+            assert await s.collect() == [2, 12, 30]
+
+        @pytest.mark.anyio
+        async def test_starmap_with_lambda(self):
+            lambda_fn: TFn[int, int, int] = lambda x, y: x + y  # noqa: E731
+            s = astream(self.apairs()).starmap(lambda_fn)
+            assert isinstance(s, AsyncStream)
+            assert await s.collect() == [3, 7, 11]

@@ -10,6 +10,15 @@ def double(x: int) -> int:
     return x * 2
 
 
+def multiply(x: int, y: int) -> int:
+    return x * y
+
+
+async def wait_and_multiply(x: int, y: int) -> int:
+    await asyncio.sleep(0.001)
+    return x * y
+
+
 def is_even(x: int) -> bool:
     return x % 2 == 0
 

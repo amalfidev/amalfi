@@ -12,11 +12,14 @@
     - [`AsyncIterFn`: The Asynchronous Iterable Function Type](#asynciterfn-the-asynchronous-iterable-function-type)
   - [Pipelining](#pipelining)
     - [Pipelines](#pipelines)
-  - [Operators](#operators)
-    - [Mapping](#mapping)
     - [Filtering](#filtering)
     - [Reducing](#reducing)
     - [Collecting](#collecting)
+    - [Tapping](#tapping)
+    - [Starmap](#starmap)
+  - [Streaming](#streaming)
+    - [Streams](#streams)
+    - [AsyncStreams](#asyncstreams)
   - [Utilities](#utilities)
     - [`as_async`: Convert a function from sync to async](#as_async-convert-a-function-from-sync-to-async)
     - [TODO:](#todo)
@@ -106,10 +109,96 @@ A type alias for an asynchronous function that takes an iterable of type `Iterab
 - **`|` Operator**: Use the bitwise OR operator to chain functions in a pipeline.
 - **step**: Add a function to the pipeline.
 
+**Examples**
+
+  Basic usage with integer transformations:
+
+  ```python
+  from amalfi.pipeline import pipe, Pipeline
+
+  def add_one(x: int) -> int:
+      return x + 1
+
+  def multiply_by_two(x: int) -> int:
+      return x * 2
+
+  # Create a pipeline that adds one and then multiplies by two
+  my_pipeline = Pipeline.pipe(3) | add_one | multiply_by_two
+  # or
+  my_pipeline = pipe(3) | add_one | multiply_by_two
+  # or
+  my_pipeline = pipe(3).then(add_one).then(multiply_by_two)
+
+  result = my_pipeline()  # (3 + 1) * 2 = 8
+  print(result)  # Output: 8
+  ```
+
+  Chaining multiple functions with different return types:
+
+  ```python
+  from amalfi.pipeline import pipe
+
+  def square(x: int) -> int:
+      return x * x
+
+  def to_string(x: int) -> str:
+      return f"Result is {x}"
+
+  def shout(s: str) -> str:
+      return s.upper() + "!"
+
+  # Create a pipeline that squares a number, converts to string, and shouts it
+  my_pipeline = pipe(5) | square | to_string | shout
+  # or
+  my_pipeline = Pipeline(5) | square | to_string | shout
+  # or
+  my_pipeline = pipe(5).then(square).then(to_string).then(shout)
+
+  result = my_pipeline()  # Square 5, convert, and shout
+  print(result)  # Output: "RESULT IS 25!"
+  ```
+
+  Using built-in functions within the pipeline:
+
+  ```python
+  from amalfi.pipeline import pipe
+
+  # Create a pipeline that converts to string and gets the length
+  my_pipeline = pipe(12345) | str | len
+
+  result = my_pipeline()
+  print(result)  # Output: 5
+  ```
+
+  Using async functions within the pipeline:
+  
+  ```python
+    from amalfi.pipeline import apipe, AsyncPipeline
+    import asyncio
+
+    def add_one(x: int) -> int:
+        return x + 1
+
+    async def multiply_by_two(x: int) -> int:
+        await asyncio.sleep(0.001)  # Simulate async operation
+        return x * 2
+
+    # Create an async pipeline that adds one and then multiplies by two
+    my_pipeline = apipe(3) | add_one | multiply_by_two
+    # or
+    my_pipeline = apipe(3) | add_one | multiply_by_two
+    # or
+    my_pipeline = apipe(3).then(add_one).then(multiply_by_two)
+
+    result = asyncio.run(my_pipeline())  # (3 + 1) * 2 = 8
+    print(result)  # Output: 8
+
 ## Operators
-### Mapping
-- `map_`: Apply a function over an iterable, possibly asynchronously.
-- `amap`: Async version of `map_`. Analogous to `asyncio.gather` but for pipelines.
+### Map
+The map operators apply a function over an iterable. 
+- `map_`: synchronous version.
+- `amap`: asynchronous version. Analogous to `asyncio.gather` but for pipelines.
+
 ```python
 from amalfi import apipe, pipe
 from amalfi.ops import amap, map_
@@ -129,8 +218,10 @@ print(result) # Output: 12 (after 0.1s)
 ```
 
 ### Filtering
-- `afilter`: Async version of `filter_`.
-- `filter_`: Filter items in an iterable based on a predicate.
+The filtering operators filter items in an iterable based on a predicate.
+
+- `filter_`: synchronous version.
+- `afilter`: asynchronous version.
 
 Both `filter_` and `afilter` support type narrowing using `TypeGuard` predicates for improved type safety.
 
@@ -156,8 +247,9 @@ result = await (
 ```
 
 ### Reducing
-- `reduce_`: Reduce an iterable to a single value using a binary function.
-- `areduce`: Async version of `reduce_`. It is concurrent and will evaluate the binary function concurrently for each pair of elements in the iterable in a sequential (not parallel) manner.
+The reducing operators reduce or fold an iterable to a single value using a binary function.
+- `reduce_`: synchronous version.
+- `areduce`: asynchronous version. It is concurrent and will evaluate the binary function concurrently for each pair of elements in the iterable in a sequential (not parallel) manner.
 
 ```python
 from amalfi import apipe, pipe
@@ -176,8 +268,9 @@ print(result) # Output: 10 (after 0.4s = 0.1s per pair of elements)
 ```
 
 ### Collecting
-- `collect`: Collect all items from an iterable into a list. Useful for turning a generator into a list inside a pipeline.
-- `acollect`: Async version of `collect`. Useful for turning an async generator into a list inside an async pipeline.
+The collecting operators collect or gather the items from an iterator into a list, using a generator function to yield processed items.
+- `collect`: synchronous version.
+- `acollect`: asynchronous version.
 
 ```python
 from amalfi import apipe, pipe
@@ -198,6 +291,98 @@ async def async_yield_items(xs: Iterable[int]) -> AsyncIterator[int]:
 pipeline = apipe([1, 2, 3]) | acollect(async_yield_items) | sum
 print(await pipeline.run()) # Output: 6 (after 0.3s)
 ```
+
+### Tapping
+The tapping operators perform a synchronous or asynchronous side effect within a pipeline without interrupting the data flow. They are useful for debugging, logging, etc.
+
+It is important to note that in order to ensure the data is not altered, the tapping function should not alter the input value, otherwise the pipeline will not be pure and the data will be altered.
+
+- `tap`: synchronous version.
+- `atap`: asynchronous version.
+
+```python
+from amalfi import apipe, pipe
+from amalfi.ops import atap, tap
+
+pipeline = pipe([1, 2, 3]) | tap(print) | sum
+print(pipeline.run()) # Output: 6
+# prints: [1, 2, 3]
+
+async def async_print(x: int):
+    await asyncio.sleep(0.001)
+    print(x)
+
+pipeline = apipe([1, 2, 3]) | atap(async_print) | sum
+print(await pipeline.run()) # Output: 6 (after 0.3s)
+# prints: [1, 2, 3] (after 0.3s)
+```
+
+### Starmap
+The starmap operators apply a function to each element of an iterable of tuples.
+- `starmap`: synchronous version.
+- `astarmap`: asynchronous version.
+
+```python
+from amalfi import apipe, pipe
+from amalfi.ops import astarmap, starmap
+
+def multiply(x: int, y: int) -> int:
+    return x * y
+
+result = pipe([(1, 2), (3, 4), (5, 6)]) | starmap(multiply) | sum
+print(result) # Output: 42
+
+async def async_multiply(x: int, y: int) -> int:
+    await asyncio.sleep(0.001)
+    return x * y
+
+result = await apipe([(1, 2), (3, 4), (5, 6)]) | astarmap(async_multiply) | sum
+print(result) # Output: 42 (after 0.3s) 
+```
+
+## Streaming
+TODO: add docs
+
+### Streams
+TODO: add docs
+
+```python
+from amalfi.stream import stream
+
+def add_one(x: int) -> int:
+    return x + 1
+
+def multiply_by_two(x: int) -> int:
+    return x * 2
+
+# Create a stream that adds one and then multiplies by two
+result = (
+    stream([1, 2, 3, 4, 5])
+        .map(add_one)
+        .filter(lambda x: x % 2 == 0)
+        .take(2)
+        .collect()
+    )
+assert result == [2, 4]
+```
+
+### AsyncStreams
+TODO: add docs
+TODO: add examples
+
+Basic usage with integer transformations:
+
+```python
+from amalfi.stream import astream
+
+async def adouble(x: int) -> int:
+    await asyncio.sleep(1) # Simulate async work
+    return x * 2
+
+result = await astream([1, 2, 3]).map(adouble).take(2).collect()
+assert result == [2, 4]
+```
+
 
 ## Utilities
 The following utilities are useful to work with functions and are used throughout the library as well. They can become handy when working with the library in a type-safe manner.
@@ -246,16 +431,33 @@ Useful for working with sync functions in an async context, or for converting sy
 
 
 ### TODO:
-- **fork**: Split the data flow to multiple functions.
-- **fork**: Split the data flow to multiple functions.
-- **apply**: Apply a function to an argument list.
+- Operators: see https://rxjs.dev/guide/operators#transformation-operators
+  - stream foreach
+  - len
+  - catch_error
+  - retry / retry_when
+  - all / every
+  - reverse
+  - sort
+  - max / min
+  - fork / afork
+  - group_by
+  - partition
+  - scan
+  - zip
+  - next / last
+  - chain
+  - flat_map
+  - enumerate
+  - zip_longest
+  - zip_with_next
+  - sorted
+  - reversed
+  - unique
+  - intersperse
 - **chain**: Compose multiple functions together.
-- **compose**: Create a new function by composing multiple functions from right to left.
 - **partial**: Partially apply a function by fixing some arguments.
 - **curry**: Transform a function into a sequence of functions each taking a single argument.
-- **then**: Continue a computation after a promise or future resolves.
-- **tap**: Perform a side effect within a pipeline without altering the data flow.
-- **to_async**: Convert a synchronous function to an asynchronous one.
 - **to_thread**: Run a function in a separate thread.
 - **to_process**: Run a function in a separate process.
 

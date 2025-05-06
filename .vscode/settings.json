@@ -18,5 +18,10 @@
     "./amalfi",
     "./examples"
   ],
-  "python.languageServer": "Pylance"
+  "python.languageServer": "Pylance",
+  "python.testing.pytestArgs": [
+    "."
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
 }

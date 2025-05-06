@@ -8,10 +8,12 @@ readme = "README.md"
 homepage = "https://github.com/amalfidev/amalfi"
 repository = "https://github.com/amalfidev/amalfi"
 keywords = ["functional programming", "python"]
+packages = [{ include = "examples" }, { include = "amalfi" }]
 
 [tool.poetry.dependencies]
 python = "^3.12"
 amalfi = { path = "amalfi", develop = true }
+pydantic = {extras = ["email"], version = "^2.9.2"}
 
 [build-system]
 requires = ["poetry-core"]
@@ -23,6 +25,8 @@ pre-commit = "^4.0.0"
 pyright = "^1.1.383"
 pytest = "^7.4.3"
 pytest-anyio = "^0.0.0"
+pydantic = {extras = ["all"], version = "^2.9.2"}
+faker = "^30.8.2"
 
 [tool.ruff]
 # General Ruff settings

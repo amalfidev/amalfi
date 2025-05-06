@@ -60,7 +60,7 @@ def amap[I, O](
     Args:
         fn (AsyncFn[I, O]): An asynchronous mapping function
         safe (bool): If True, exceptions will be returned instead of raised.
-            Analogous to the `return_exceptions` argument in `asyncio.gather`.
+            Analogous to the `safe` argument in `asyncio.gather`.
 
     Returns:
         AsyncIterFn[I, O] | AsyncIterFn[I, O | BaseException]: the curried async mapper
@@ -83,7 +83,7 @@ def amap[I, O](
         ...     if x == 2:
         ...         raise ValueError("Two is not allowed")
         ...     return x * 2
-        >>> amap_risky = amap(async_risky, return_exceptions=True)
+        >>> amap_risky = amap(async_risky, safe=True)
         >>> result = await amap_risky([1, 2, 3])
         >>> print(result)
         [2, ValueError("Two is not allowed"), 6]

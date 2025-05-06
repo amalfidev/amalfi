@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import functools
 from itertools import islice, takewhile
-from typing import Iterable, Iterator, overload
+from typing import Any, Iterable, Iterator, cast, overload
 
-from ..core import Fn, as_aiter
+from amalfi.ops import tap
+
+from ..core import Fn, TFn, VFn, as_aiter
 from ..pipeline import AsyncPipeline, Pipeline, apipe, pipe
 from .astream import AsyncStream
 
@@ -23,30 +26,6 @@ class Stream[I]:
 
     Attributes:
     - `input`: The input iterable to the stream, to be transformed by the functions.
-
-    Examples:
-
-    Basic usage with integer transformations:
-
-    ```python
-    from amalfi.stream import stream
-
-    def add_one(x: int) -> int:
-        return x + 1
-
-    def multiply_by_two(x: int) -> int:
-        return x * 2
-
-    # Create a stream that adds one and then multiplies by two
-    result = (
-        stream([1, 2, 3, 4, 5])
-            .map(add_one)
-            .filter(lambda x: x % 2 == 0)
-            .take(2)
-            .collect()
-        )
-    assert result == [2, 4]
-    ```
     """
 
     _iter: Iterable[I]
@@ -96,16 +75,6 @@ class Stream[I]:
         Args:
             into (Fn[Iterable[I], T] | None): An optional custom collector function,
             which defaults to a list.
-
-        Returns:
-            T | list[I]: The collected result of the stream.
-
-        Examples
-        --------
-        >>> result = stream([1, 2, 3, 4, 5]).map(lambda x: x + 1).collect()
-        [2, 3, 4, 5, 6]
-        >>> result = stream([1, 2, 3]).map(lambda x: x + 1).collect(into=tuple)
-        (2, 3, 4)
         """
         if not into:
             return list(self)
@@ -121,14 +90,6 @@ class Stream[I]:
 
         Args:
             fn (Fn[I, O]): A synchronous mapping function
-
-        Returns:
-            Stream[O]: a new stream of the mapped values
-
-        Examples
-        --------
-        >>> result = stream([1, 2, 3]).map(lambda x: x + 1).collect()
-        >>> assert result == [2, 3, 4]
         """
 
         return Stream(map(fn, self))
@@ -141,59 +102,33 @@ class Stream[I]:
         Args:
             fn (Fn[I, bool] | None): A synchronous filtering function. If `None` is
             passed, the stream will be filtered to exclude `None` values.
-
-        Returns:
-            Stream[I]: a new stream of the filtered values
-
-        Examples
-        --------
-        >>> result = stream([1, 2, 3]).filter(lambda x: x % 2 == 0).collect()
-        >>> assert result == [2]
-        >>> result = stream([1, None, 3]).filter(None).collect()
-        >>> assert result == [1, 3]
         """
         return Stream(filter(fn, self))
 
     def take(self, n: int) -> Stream[I]:
         """
-        Take the first `n` values from the stream.
+        Take the first `n` values from the stream. Returns a new stream.
 
         Args:
             n (int): The number of values to take from the stream
-
-        Returns:
-            Stream[I]: a new stream of the first `n` values
         """
         return Stream(islice(self, n))
 
     def take_while(self, fn: Fn[I, bool]) -> Stream[I]:
         """
-        Take values from the stream while the predicate is true.
+        Take values from the stream while the predicate is true. Returns a new stream.
 
         Args:
             fn (Fn[I, bool]): A synchronous predicate function
-
-        Returns:
-            Stream[I]: a new stream of the values taken while the predicate is true
         """
         return Stream(takewhile(fn, self))
 
     def default(self, default: I) -> Stream[I]:
         """
-        Returns a stream with the default value if the stream is empty.
+        Returns a new stream with the default value if the stream is empty.
 
         Args:
             default (I): The default value to return if the stream is empty
-
-        Returns:
-            Stream[I]: a new stream with the default value if the stream is empty
-
-        Examples
-        --------
-        >>> result = stream([1, 2, 3]).default(0).collect()
-        >>> assert result == [1, 2, 3]
-        >>> result = stream([]).default(0).collect()
-        >>> assert result == [0]
         """
 
         def default_gen() -> Iterator[I]:
@@ -206,41 +141,57 @@ class Stream[I]:
 
         return Stream(default_gen())
 
+    def tap(self, fn: Fn[I, Any]) -> Stream[I]:
+        """
+        Perform a synchronous side effect within a stream without altering the
+        data flow. Returns a new stream.
+
+        Args:
+            fn (Fn[I, Any]): A synchronous side effect function
+        """
+        return self.map(tap(fn))
+
+    def reduce[O](self, fn: VFn[[O, I], O], initial: O) -> Stream[O]:
+        """
+        Reduce or fold the stream to a single value using a reducer function.
+        Returns a new stream.
+
+        Args:
+            fn (VFn[[O, I], O]): A synchronous reducer function
+            initial (O): The initial value for the reduction
+        """
+
+        def reducer() -> Iterator[O]:
+            yield functools.reduce(fn, self, initial)
+
+        return Stream(reducer())
+
+    def starmap[*P, O](self, fn: TFn[*P, O]) -> Stream[O]:
+        """
+        Apply a synchronous tuple-unpacking function to each element of an iterable,
+        yielding the mapped values. The stream must be an iterable of tuples,
+        otherwise a `ValueError` is raised.
+
+        Returns a new stream of the mapped values.
+
+        Args:
+            fn (TFn[I, O]): A synchronous tuple-unpacking function
+
+        Raises:
+            ValueError: If the input is not an iterable of tuples
+        """
+
+        def starmapper() -> Iterator[O]:
+            for item in self:
+                if not isinstance(item, tuple):
+                    raise ValueError(f"Expected tuple, got {type(item)}")
+                yield fn(*cast(tuple[*P], item))
+
+        return Stream(starmapper())
+
     # endregion --ops
 
 
 def stream[I](input: Iterable[I]) -> Stream[I]:
-    """Alias for the `Stream` constructor.
-
-    Examples
-    --------
-    >>> result = stream([1, 2, 3]).map(lambda x: x + 1).collect()
-    >>> assert result == [2, 3, 4]
-    """
+    """Alias for the `Stream` constructor."""
     return Stream(input)
-
-
-# TODO:
-# - operators: see https://rxjs.dev/guide/operators#transformation-operators
-# -- reduce / areduce
-# -- catch_error
-# -- count
-# -- fork / afork
-# -- group_by
-# -- partition
-# -- scan
-# -- tap
-# -- zip
-# -- chain
-# -- flat_map
-# -- enumerate
-# -- zip_longest
-# -- zip_with_next
-# -- sorted
-# -- reversed
-# -- unique
-# -- intersperse
-# - to_thread (asyncio, concurrent.futures, threading)
-# - to_process (multiprocessing)
-# - to_executor (concurrent.futures)
-# - to_queue (multiprocessing)

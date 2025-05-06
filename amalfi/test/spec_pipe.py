@@ -20,10 +20,10 @@ class TestPipeline:
     def test_composed_pipe(self):
         result = (
             pipe(1)
-            .step(add_one)  # 2
-            .step(double)  # 4
-            .step(lambda x: x + 1)  # 5
-            .step(str)  # "5"
+            .then(add_one)  # 2
+            .then(double)  # 4
+            .then(lambda x: x + 1)  # 5
+            .then(str)  # "5"
             | uppercase  # "5"
             | len  # 1
             | add_one  # 2
@@ -61,9 +61,9 @@ class TestAsyncPipeline:
     async def test_pipe(self):
         pipeline = (
             AsyncPipeline("Alice")
-            .step(greet)  # "Hello, Alice"
-            .step(wait_and_emphasize)  # "HELLO, ALICE!" (0.1s) async
-            .step(len)  # 13
+            .then(greet)  # "Hello, Alice"
+            .then(wait_and_emphasize)  # "HELLO, ALICE!" (0.1s) async
+            .then(len)  # 13
             | add_one  # 14
             | str  # "14"
             | wait_and_emphasize  # "14!" (0.1s) async
@@ -74,9 +74,9 @@ class TestAsyncPipeline:
 
         result = await (
             apipe("Alice")
-            .step(greet)
-            .step(wait_and_emphasize)  # async
-            .step(len)
+            .then(greet)
+            .then(wait_and_emphasize)  # async
+            .then(len)
             | add_one
             | str
             | wait_and_emphasize  # async
